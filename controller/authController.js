@@ -13,7 +13,7 @@ const sendForgotPasswordCode = async (req, res) =>{
             return res.status(400).json({ message: 'Valid email is required' });
         }
         const userExists = await UserModel.findOne({ email });
-        if (userExists) {
+        if (!userExists) {
             return res.status(400).json({message: 'No account found with this email'})
         }
         const token = Math.floor(Math.random() * (999999 - 100000 + 1) + 100000);
