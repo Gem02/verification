@@ -14,23 +14,35 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-const sendVerificationEmail = async (email, name, token) => {
+const sendVerificationEmail = async (email, token) => {
     try {
     const info = await transporter.sendMail({
         from: 'noreply',
         to: email,
-        subject: 'Verify your email on Goka',
-        html: `<div>
-                    <h1> Hello ${name} Welcome to Goka </h1>
-                    <h4>Your email verification code on Goka is: </h4>
-                    <h2>${token}</h2>
-                    <p>This code will expires in 5 mins</p>
-                </div>`
+        subject: 'AY CREATIVE - Reset password ',
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px;">
+    <div style="text-align: center;">
+      <img src="https://yourdomain.com/logo.png" alt="Goka Logo" style="width: 120px; margin-bottom: 20px;" />
+    </div>
+    <h2 style="color: #333;">Hello,</h2>
+    <p style="font-size: 20px; color: #555;">
+      Welcome to <strong>AY-CREATIVE TECHNOLOGY</strong>!
+    </p>
+    <p style="font-size: 16px; color: #555;">To change your password, please use the verification code below:</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <span style="font-size: 24px; font-weight: bold; color: #007bff;">${token}</span>
+    </div>
+    <p style="font-size: 14px; color: #888;">This code will expire in 5 minutes.</p>
+    <hr style="margin: 30px 0;" />
+    <p style="font-size: 12px; color: #aaa; text-align: center;">
+      If you didn’t request this, please ignore this email.
+    </p>
+  </div>`
 
     });
     console.log('Verification code sent successfully');
     } catch (error) {
-       // return 'error sending email';
+      
         console.log('error sending email');
 
     }
