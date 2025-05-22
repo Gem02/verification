@@ -3,9 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
-const { secureHeaders,limiter,xssClean,hpp} = require('./middleware/security');
+const { secureHeaders,limiter,hpp} = require('./middleware/security');
 
 const authRoutes = require('./route/authRoutes');
+const virtualAccount = require('./route/accountRoute')
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use(limiter);
 
 //routes
 app.use('/api/auth', authRoutes);
+app.use('/api/virtualAccount', virtualAccount);
 
 
 const PORT = process.env.PORT || 8000;

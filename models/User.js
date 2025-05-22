@@ -63,6 +63,10 @@ const UserSchema = new mongoose.Schema({
     enum: ['user', 'admin', 'super-admin'],
     default: 'user'
   },
+  hasAccount: {
+    type: Boolean,
+    default: false
+  },
   isLocked: {
     type: Boolean,
     default: false

@@ -59,8 +59,6 @@ const verifyCode = async (req, res) => {
     }
 };
 
-
-
  const newPassword = async (req, res) => {
     try {
         const email = validator.normalizeEmail(req.body.email || '');
@@ -85,7 +83,6 @@ const verifyCode = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }; 
-
 
 const registerUser = async (req, res) => {
     try {
@@ -113,8 +110,6 @@ const registerUser = async (req, res) => {
         return res.status(500).json({ message: 'Error creating new user', error: error.message });
     }
 };
-
-
 
 const login = async (req, res) => {
     try {
@@ -151,6 +146,8 @@ const login = async (req, res) => {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'None'
         });
+
+        createUserVirtualAccount(userInfo);
 
         return res.status(200).json({
             id: userInfo._id,
