@@ -14,7 +14,7 @@ const handleWebhook = async (req, res) => {
       return res.status(200).send('Ignored event');
     }
 
-    // ✅ Verify webhook signature
+ 
     const signature = req.headers['monnify-signature'];
     const rawBody = JSON.stringify(req.body);
     const computedHash = crypto.createHmac('sha512', MONNIFY_SECRET)
@@ -23,56 +23,51 @@ const handleWebhook = async (req, res) => {
 
     if (signature !== computedHash) {
       console.warn('❌ Webhook signature mismatch!');
-      return res.status(200).send('Invalid signature'); 
+      return res.status(200).send('Invalid signature');
     }
 
-    
-    const {
-      transactionReference,
-      destinationAccountNumber,
-      amountPaid,
-      paymentDescription
-    } = data.eventData || {};
+    const event = data.eventData || {};
+    const transactionReference = event.transactionReference;
+    const amountPaid = event.amountPaid;
+    const paymentDescription = event.paymentDescription || 'Deposit to virtual account';
+    const accountNumber = event.destinationAccountInformation?.accountNumber;
 
-    if (!transactionReference || !destinationAccountNumber) {
+    if (!transactionReference || !accountNumber || !amountPaid) {
       console.warn('⚠️ Missing required transaction data');
       return res.status(200).send('Invalid data');
     }
 
-    // ✅ Avoid duplicate transaction
+   
     const existing = await Transaction.findOne({ transactionReference });
     if (existing) {
       return res.status(200).send('Already processed');
     }
 
-    // ✅ Lookup virtual account
-    const virtualAccount = await VirtualAccount.findOne({ accountNumber: destinationAccountNumber });
 
+    const virtualAccount = await VirtualAccount.findOne({ accountNumber });
     if (!virtualAccount) {
-      console.warn('⚠️ Virtual account not found for:', destinationAccountNumber);
-      return res.status(200).send('Account not found'); // DO NOT RETURN 400
+      console.warn('⚠️ Virtual account not found for:', accountNumber);
+      return res.status(200).send('Account not found');
     }
 
-    // ✅ Credit the account
     virtualAccount.balance += parseFloat(amountPaid);
     await virtualAccount.save();
 
-    // ✅ Log transaction
     await Transaction.create({
       user: virtualAccount.user,
-      accountNumber: destinationAccountNumber,
+      accountNumber,
       amount: parseFloat(amountPaid),
       transactionReference,
       type: 'credit',
       status: 'success',
-      description: paymentDescription || 'Deposit to virtual account',
+      description: paymentDescription,
     });
 
     console.log(`✅ Transaction recorded: ${transactionReference}`);
     return res.status(200).send('Webhook processed successfully');
   } catch (err) {
     console.error('❌ Webhook error:', err);
-    return res.status(200).send('Server error'); 
+    return res.status(200).send('Server error');
   }
 };
 
