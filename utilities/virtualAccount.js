@@ -23,12 +23,11 @@ async function createUserVirtualAccount(user) {
       }
     );
 
-    console.log("From virtual account", response.data);
     return response.data.responseBody;
 
   } catch (error) {
-    console.error("Error creating virtual account:", error.response?.data || error.message);
-    throw new Error("Virtual account creation failed");
+    console.log("Error creating virtual account:", error.response?.data || error.message);
+    return res.status(500).send('Server error');
   }
 }
 
