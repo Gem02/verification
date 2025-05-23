@@ -1,13 +1,15 @@
 require('dotenv').config();
-const {getMonnifyToken} = require('../config/monnifyToken');
+const { getMonnifyToken } = require('../config/monnifyToken');
 const axios = require("axios");
+const VirtualAccount = require('../models/VirtualAccountModel');
 
 async function createUserVirtualAccount(user) {
   try {
     const token = await getMonnifyToken();
+    const baseUrl = process.env.MONNIFY_BASE_URL;
 
     const response = await axios.post(
-      "https://sandbox.monnify.com/api/v1/bank-transfer/reserved-accounts",
+      `${baseUrl}/api/v1/bank-transfer/reserved-accounts`,
       {
         accountReference: `user_${user._id}`, 
         accountName: `${user.firstName} ${user.lastName}`,
@@ -15,20 +17,23 @@ async function createUserVirtualAccount(user) {
         contractCode: process.env.MONNIFY_CONTRACT_CODE,
         customerEmail: user.email,
         customerName: `${user.firstName} ${user.lastName}`,
+        nin: user.nin || undefined 
       },
       {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
         },
       }
     );
 
+    console.log(response.data.responseBody);
     return response.data.responseBody;
 
   } catch (error) {
-    console.log("Error creating virtual account:", error.response?.data || error.message);
-    return res.status(500).send('Server error');
+    console.error("❌ Error creating virtual account:", error.response?.data || error.message);
+    throw new Error("Failed to create virtual account");
   }
 }
 
-module.exports = {createUserVirtualAccount}
+module.exports = { createUserVirtualAccount };

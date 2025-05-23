@@ -4,6 +4,7 @@ const bcryptjs = require('bcryptjs');
 const validator = require('validator');
 const forgotPasswordModel = require('../models/forgotPassword');
 const {sendVerificationEmail} = require('../utilities/emailTemplate');
+const {createUserVirtualAccount}= require('../utilities/virtualAccount')
 
 
 const sendForgotPasswordCode = async (req, res) =>{
@@ -146,6 +147,7 @@ const login = async (req, res) => {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'None'
         });
+
 
         return res.status(200).json({
             id: userInfo._id,
