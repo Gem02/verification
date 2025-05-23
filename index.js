@@ -6,7 +6,8 @@ const connectDB = require('./config/db');
 const { secureHeaders,limiter,hpp} = require('./middleware/security');
 
 const authRoutes = require('./route/authRoutes');
-const virtualAccount = require('./route/accountRoute')
+const virtualAccount = require('./route/accountRoute');
+const webhookRoutes = require('./route/webhookRoute');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(limiter);
 //routes
 app.use('/api/auth', authRoutes);
 app.use('/api/virtualAccount', virtualAccount);
+app.use('/api/webhook', express.raw({ type: 'application/json' }), webhookRoutes);
 
 
 const PORT = process.env.PORT || 8000;
