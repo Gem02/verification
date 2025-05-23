@@ -14,7 +14,7 @@ const handleWebhook = async (req, res) => {
       return res.status(200).send('Ignored event');
     }
 
-   
+    // ✅ Verify webhook signature
     const signature = req.headers['monnify-signature'];
     const rawBody = JSON.stringify(req.body);
     const computedHash = crypto.createHmac('sha512', MONNIFY_SECRET)
