@@ -147,8 +147,6 @@ const login = async (req, res) => {
             sameSite: 'None'
         });
 
-        createUserVirtualAccount(userInfo);
-
         return res.status(200).json({
             id: userInfo._id,
             firstName: userInfo.firstName,
