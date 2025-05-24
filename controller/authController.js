@@ -4,7 +4,7 @@ const bcryptjs = require('bcryptjs');
 const validator = require('validator');
 const forgotPasswordModel = require('../models/forgotPassword');
 const {sendVerificationEmail} = require('../utilities/emailTemplate');
-const {createUserVirtualAccount}= require('../utilities/virtualAccount')
+const {checkNIN} = require('../utilities/quickVerify')
 
 
 const sendForgotPasswordCode = async (req, res) =>{
@@ -86,31 +86,54 @@ const verifyCode = async (req, res) => {
 }; 
 
 const registerUser = async (req, res) => {
-    try {
-        const firstName = validator.escape(req.body.firstName || '');
-        const lastName = validator.escape(req.body.lastName || '');
-        const email = validator.normalizeEmail(req.body.email || '');
-        const phone = validator.escape(req.body.phone || '');
-        const nin = validator.escape(req.body.nin || '');
-        const password = validator.escape(req.body.password || '');
+    console.log('we are here')
+  try {
+    const firstName = validator.escape(req.body.firstName || '');
+    const lastName = validator.escape(req.body.lastName || '');
+    const email = validator.normalizeEmail(req.body.email || '');
+    const phone = validator.escape(req.body.phone || '');
+    const nin = validator.escape(req.body.nin || '');
+    const password = validator.escape(req.body.password || '');
 
-        if (!firstName || !lastName || !email || !phone || !nin || !password) {
-            return res.status(400).json({ message: 'All fields are required' });
-        }
-
-        const userExists = await UserModel.findOne({ email });
-        if (userExists) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
-
-        const user = await UserModel.create({ firstName, lastName, email, phone, nin, password });
-
-        return res.status(201).json({ message: 'New user created' });
-
-    } catch (error) {
-        return res.status(500).json({ message: 'Error creating new user', error: error.message });
+    if (!firstName || !lastName || !email || !phone || !nin || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
     }
+
+    const userExists = await UserModel.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+    
+
+    try {
+      const res = await checkNIN(nin);
+      console.log(res)
+    } catch (ninError) {
+      return res.status(400).json({ message: 'Invalid NIN. Verification failed.' });
+    }
+
+    console.log('finally')
+
+    const user = await UserModel.create({
+      firstName,
+      lastName,
+      email,
+      phone,
+      nin,
+      password,
+    });
+
+    return res.status(201).json({ message: 'User created successfully', user });
+
+  } catch (error) {
+    console.error('Registration error:', error.message);
+    return res.status(500).json({
+      message: 'Registration failed due to server error',
+      error: error.message,
+    });
+  }
 };
+
 
 const login = async (req, res) => {
     try {
