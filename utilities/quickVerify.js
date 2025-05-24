@@ -13,7 +13,7 @@ const checkNIN = async (nin) => {
     });
 
     const response = await axios.post(
-      `${base_url}/api/v1/biometrics/merchant/data/verification/nin`,
+      `${base_url}/api/v1/kyc/nin`,
       { number: nin },
       {
         headers: {
