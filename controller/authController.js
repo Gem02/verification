@@ -104,6 +104,10 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
     
+    const activeNin = await UserModel.findOne({nin});
+    if (activeNin) {
+        return res.status(400).json({ message: 'NIN already exists' });
+    }
 
     try {
       const res = await checkNIN(nin);
