@@ -1,6 +1,6 @@
 require('dotenv').config();
 const validator = require('validator');
-const axios = require('axios');git
+const axios = require('axios')
 
 
 const verifyNin = async (req, res) =>{
