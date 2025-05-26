@@ -8,6 +8,7 @@ const { secureHeaders,limiter,hpp} = require('./middleware/security');
 const authRoutes = require('./route/authRoutes');
 const virtualAccount = require('./route/accountRoute');
 const webhookRoutes = require('./route/webhookRoute');
+const verifications = require('./route/mainVerificationsRoute');
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use(limiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/virtualAccount', virtualAccount);
 app.use('/api/webhook', express.raw({ type: 'application/json' }), webhookRoutes);
+app.use('/api/verify', verifications);
 
 
 const PORT = process.env.PORT || 8000;

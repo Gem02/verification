@@ -19,7 +19,6 @@ const checkNIN = async (nin) => {
     );
 
     const result = response.data;
-    console.log('the result is', result);
     if (!result?.status || result.verification?.status !== 'VERIFIED') {
       throw new Error('❌ NIN verification failed');
     }
@@ -27,7 +26,6 @@ const checkNIN = async (nin) => {
     return result.data;
 
   } catch (error) {
-    console.log('the error is', error)
     const errData = error.response?.data || error.message;
     throw new Error(`❌ NIN verification error: ${JSON.stringify(errData)}`);
   }

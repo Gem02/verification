@@ -86,7 +86,7 @@ const verifyCode = async (req, res) => {
 }; 
 
 const registerUser = async (req, res) => {
-    console.log('we are here')
+
   try {
     const firstName = validator.escape(req.body.firstName || '');
     const lastName = validator.escape(req.body.lastName || '');
