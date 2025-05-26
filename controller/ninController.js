@@ -4,6 +4,7 @@ const axios = require('axios')
 
 
 const verifyNin = async (req, res) =>{
+    const base_url = process.env.PREMBLY_BASE_URL;
     try {
         const nin = validator.escape(req.body.nin || '');
         if (!nin) {
