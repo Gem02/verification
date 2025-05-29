@@ -6,6 +6,7 @@ const balanceCheck = require('../utilities/compareBalance');
 const verifyNin = async (req, res) => {
   const base_url = process.env.PREMBLY_BASE_URL;
   const { nin, amount, userId, verifyWith, slipLayout } = req.body;
+  console.log("request data", req.body);
 
   try {
     const cleanNIN = validator.escape(nin || '');
@@ -14,7 +15,7 @@ const verifyNin = async (req, res) => {
     }
 
     const userAcc = await balanceCheck(userId, amount);
-
+    console.log("balNCE DATA", userAcc);
     const response = await axios.post(
       `${base_url}/identitypass/verification/vnin`,
       { number: cleanNIN },
