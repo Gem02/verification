@@ -43,7 +43,7 @@ const verifyNin = async (req, res) => {
       data: result,
       verifyWith,
       slipLayout,
-      userAcc
+      balance: userAcc.balance
     });
 
   } catch (error) {
