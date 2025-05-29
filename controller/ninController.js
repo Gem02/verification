@@ -1,7 +1,7 @@
 require('dotenv').config();
 const axios = require('axios');
 const validator = require('validator');
-const balanceCheck = require('../utilities/compareBalance');
+const {balanceCheck} = require('../utilities/compareBalance');
 
 const verifyNin = async (req, res) => {
   const base_url = process.env.PREMBLY_BASE_URL;
