@@ -58,6 +58,7 @@ const handleWebhook = async (req, res) => {
       accountNumber,
       amount: parseFloat(amountPaid),
       transactionReference,
+      TransactionType: 'Wallet topUp',
       type: 'credit',
       status: 'success',
       description: paymentDescription,

@@ -46,6 +46,7 @@ const verifyBvn = async (req, res) => {
           accountNumber: userAcc.accountNumber,
           amount,
           transactionReference: generateTransactionRef(),
+          TransactionType: 'BVN-Verification',
           type: 'debit',
           description: 'BVN verification slip payment',
         });

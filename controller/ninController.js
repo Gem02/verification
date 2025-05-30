@@ -47,6 +47,7 @@ const verifyNin = async (req, res) => {
       accountNumber: userAcc.accountNumber,
       amount,
       transactionReference: generateTransactionRef(),
+      TransactionType: 'NIN-Verification',
       type: 'debit',
       description: 'NIN verification slip payment',
     });

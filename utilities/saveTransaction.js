@@ -1,6 +1,6 @@
 const Transaction = require('../models/transactions');
 
-const saveTransaction = async ({ user, accountNumber, amount, transactionReference, type, status = 'success', description = 'Wallet transaction',
+const saveTransaction = async ({ user, accountNumber, amount, transactionReference, TransactionType, type, status = 'success', description = 'Wallet transaction',
 }) => {
   try {
     const newTransaction = new Transaction({
@@ -8,6 +8,7 @@ const saveTransaction = async ({ user, accountNumber, amount, transactionReferen
       accountNumber,
       amount,
       transactionReference,
+      TransactionType,
       type,
       status,
       description,

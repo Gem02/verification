@@ -1,7 +1,6 @@
 require('dotenv').config();
 const { getMonnifyToken } = require('../config/monnifyToken');
 const axios = require("axios");
-const VirtualAccount = require('../models/VirtualAccountModel');
 
 async function createUserVirtualAccount(user) {
   try {
@@ -27,11 +26,9 @@ async function createUserVirtualAccount(user) {
       }
     );
 
-    console.log(response.data.responseBody);
     return response.data.responseBody;
 
   } catch (error) {
-    console.error("❌ Error creating virtual account:", error.response?.data || error.message);
     throw new Error("Failed to create virtual account");
   }
 }
