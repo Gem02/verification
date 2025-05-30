@@ -2,6 +2,11 @@ require('dotenv').config();
 const axios = require('axios');
 const validator = require('validator');
 const {balanceCheck} = require('../utilities/compareBalance');
+const saveTransaction = require('../utilities/saveTransaction');
+
+
+const generateTransactionRef = () => 'TXN-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
 
 const verifyBvn = async (req, res) => {
   const base_url = process.env.PREMBLY_BASE_URL;
@@ -36,6 +41,14 @@ const verifyBvn = async (req, res) => {
       return res.status(400).json({ message: ' BVN verification failed.' });
     }
 
+     await saveTransaction({
+          user: userId,
+          accountNumber: userAcc.accountNumber,
+          amount,
+          transactionReference: generateTransactionRef(),
+          type: 'debit',
+          description: 'BVN verification slip payment',
+        });
 
     return res.status(200).json({
       message: ' BVN verified successfully.',

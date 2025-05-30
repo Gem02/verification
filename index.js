@@ -9,6 +9,7 @@ const authRoutes = require('./route/authRoutes');
 const virtualAccount = require('./route/accountRoute');
 const webhookRoutes = require('./route/webhookRoute');
 const verifications = require('./route/mainVerificationsRoute');
+const transactions = require('./route/transactionRoute');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/virtualAccount', virtualAccount);
 app.use('/api/webhook', express.raw({ type: 'application/json' }), webhookRoutes);
 app.use('/api/verify', verifications);
+app.use('/api/transactions', transactions);
 
 
 const PORT = process.env.PORT || 8000;

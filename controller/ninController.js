@@ -2,6 +2,11 @@ require('dotenv').config();
 const axios = require('axios');
 const validator = require('validator');
 const {balanceCheck} = require('../utilities/compareBalance');
+const saveTransaction = require('../utilities/saveTransaction');
+
+
+const generateTransactionRef = () => 'TXN-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
 
 const verifyNin = async (req, res) => {
   const base_url = process.env.PREMBLY_BASE_URL;
@@ -36,6 +41,15 @@ const verifyNin = async (req, res) => {
       await userAcc.save();
       return res.status(400).json({ message: ' NIN verification failed.' });
     }
+
+    await saveTransaction({
+      user: userId,
+      accountNumber: userAcc.accountNumber,
+      amount,
+      transactionReference: generateTransactionRef(),
+      type: 'debit',
+      description: 'NIN verification slip payment',
+    });
 
 
     return res.status(200).json({
