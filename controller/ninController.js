@@ -10,7 +10,7 @@ const generateTransactionRef = () => 'TXN-' + Date.now() + '-' + Math.floor(Math
 
 const verifyNin = async (req, res) => {
   const base_url = process.env.PREMBLY_BASE_URL;
-  const { nin, amount, userId, verifyWith, slipLayout } = req.body;
+  const { nin, amount, userId, verifyWith, slipLayout, pin } = req.body;
   console.log("request data", req.body);
 
   try {
@@ -19,7 +19,8 @@ const verifyNin = async (req, res) => {
       return res.status(400).json({ message: 'Error: Please provide a valid 11-digit NIN number.' });
     }
 
-    const userAcc = await balanceCheck(userId, amount);
+    const userAcc = await balanceCheck(userId, amount, pin);
+
     console.log("balNCE DATA", userAcc);
     const response = await axios.post(
       `${base_url}/identitypass/verification/vnin`,
