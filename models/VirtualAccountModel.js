@@ -14,6 +14,7 @@ const virtualAccountSchema = new mongoose.Schema({
   contractCode: String,
   customerEmail: String,
   customerName: String,
+  customerPin: { type: String, default: null },
   balance: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });

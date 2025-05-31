@@ -1,6 +1,7 @@
 const { createUserVirtualAccount } = require('../utilities/virtualAccount');
 const UserModel = require('../models/User');
 const VirtualAccount = require('../models/VirtualAccountModel');
+const bcryptjs = require('bcryptjs');
 
 const createAccount = async (req, res) => {
   try {
@@ -69,5 +70,34 @@ const getUserVirtualAccount = async (req, res) => {
   }
 };
 
+const setPin = async (req, res) => {
+  try {
+    const { userId, pin } = req.body;
 
-module.exports = { createAccount, getUserVirtualAccount };
+   
+    if (!pin || !/^\d{4}$/.test(pin)) {
+      return res.status(400).json({ message: 'PIN must be a 4-digit number.' });
+    }
+
+    const userAccount = await VirtualAccount.findOne({ user: userId });
+    if (!userAccount) {
+      return res.status(404).json({ message: 'User account not found.' });
+    }
+
+    if (userAccount.customerPin) {
+      return res.status(400).json({ message: 'PIN already set. Please use update route instead.' });
+    }
+
+    const hashedPin = await bcryptjs.hash(pin, 10);
+    userAccount.customerPin = hashedPin;
+    await userAccount.save();
+
+    return res.status(200).json({ message: 'Transaction PIN set successfully.' });
+  } catch (error) {
+    console.error('Error setting PIN:', error);
+    return res.status(500).json({ message: 'Server error while setting PIN.' });
+  }
+};
+
+
+module.exports = { createAccount, getUserVirtualAccount, setPin };
