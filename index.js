@@ -10,6 +10,7 @@ const virtualAccount = require('./route/accountRoute');
 const webhookRoutes = require('./route/webhookRoute');
 const verifications = require('./route/mainVerificationsRoute');
 const transactions = require('./route/transactionRoute');
+const vtuPurchase = require('./route/vtuRoute');
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/api/virtualAccount', virtualAccount);
 app.use('/api/webhook', express.raw({ type: 'application/json' }), webhookRoutes);
 app.use('/api/verify', verifications);
 app.use('/api/transactions', transactions);
+app.use('/api/vtu', vtuPurchase);
 
 
 const PORT = process.env.PORT || 8000;
