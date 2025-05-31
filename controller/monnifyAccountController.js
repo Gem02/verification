@@ -99,5 +99,37 @@ const setPin = async (req, res) => {
   }
 };
 
+const checkPin = async (req, res) => {
+  try {
+    const { userId, pin } = req.body;
 
-module.exports = { createAccount, getUserVirtualAccount, setPin };
+    if (!userId || !pin) {
+      return res.status(400).json({ message: 'User ID and PIN are required.' });
+    }
+
+    const account = await VirtualAccount.findOne({ user: userId });
+
+    if (!account) {
+      return res.status(404).json({ message: 'Virtual account not found.' });
+    }
+
+    if (!account.customerPin) {
+      return res.status(400).json({ message: 'PIN not set for this account.' });
+    }
+
+    const isMatch = await bcryptjs.compare(pin, account.customerPin);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Incorrect PIN.' });
+    }
+
+    return res.status(200).json({ message: 'PIN verified successfully.' });
+
+  } catch (error) {
+    console.error('Error checking PIN:', error.message);
+    return res.status(500).json({ message: 'Server error while checking PIN.' });
+  }
+};
+
+
+module.exports = { createAccount, getUserVirtualAccount, setPin, checkPin };
