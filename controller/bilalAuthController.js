@@ -28,11 +28,3 @@ const generateToken = async () => {
 
 module.exports = generateToken;
 
-payload = {
-  network: 'MTN which means you will send 1', 
-  phone: '09019606073',
-  dataPlan: 1, 
-  userId: '12334sdfdgr...',
-  amount: '1200',
-  pin: '1234'
-};
