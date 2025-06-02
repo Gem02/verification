@@ -28,6 +28,11 @@ const buyData = async (req, res) => {
     if (!amount || isNaN(amount) || amount <= 0) {
         return res.status(400).json({ message: 'Invalid amount.' });
     }
+    if (!NETWORK_CODES[network]) {
+      return res.status(400).json({
+        message: 'Invalid network'
+      });
+    }
 
 
     const userAcc = await balanceCheck(userId, amount, pin);
@@ -72,11 +77,11 @@ const buyData = async (req, res) => {
         transactionReference: generateTransactionRef(),
         TransactionType: 'Data-Purchase',
         type: 'debit',
-        description: `Data purchase for ${NETWORK_CODES[network]} - ${result.dataplan}`,
+        description: result.message || `Data purchase for ${NETWORK_CODES[network]} - ${result.dataplan}`,
         
       });
     } catch (error) {
-      console.error('Transaction logging failed:', logErr);
+      return res.status(400).json({ message: 'Error saving transaction.' });
     }
 
 
