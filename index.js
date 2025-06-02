@@ -4,7 +4,8 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const { secureHeaders,limiter,hpp} = require('./middleware/security');
-const generateToken = require('./controller/bilalAuthController')
+
+
 const authRoutes = require('./route/authRoutes');
 const virtualAccount = require('./route/accountRoute');
 const webhookRoutes = require('./route/webhookRoute');
@@ -35,7 +36,6 @@ app.use('/api/webhook', express.raw({ type: 'application/json' }), webhookRoutes
 app.use('/api/verify', verifications);
 app.use('/api/transactions', transactions);
 app.use('/api/vtu', vtuPurchase);
-generateToken()
 
 
 const PORT = process.env.PORT || 8000;
