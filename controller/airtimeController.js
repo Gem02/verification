@@ -30,7 +30,8 @@ const buyAirtime = async (req, res) => {
         return res.status(400).json({ message: 'Invalid amount.' });
     }
 
-    if (!NETWORK_CODES[network]) {
+    const mainNetwork = Number(network);
+    if (!NETWORK_CODES[mainNetwork]) {
       return res.status(400).json({
         message: 'Invalid network'
       });
@@ -49,7 +50,7 @@ const buyAirtime = async (req, res) => {
     const requestId = `Airtime_${crypto.randomBytes(6).toString('hex')}`;
 
     const payload = {
-      network: parseInt(network),
+      network: mainNetwork,
       phone: cleanPhone,
       plan_type: plan_type.toUpperCase(),
       amount,
@@ -84,7 +85,7 @@ const buyAirtime = async (req, res) => {
       transactionReference: generateTransactionRef(),
       TransactionType: 'Airtime-Purchase',
       type: 'debit',
-      description: result.message || `Airtime purchase: ${NETWORK_CODES[network]} ${plan_type} - ${cleanPhone}`,
+      description: result.message || `Airtime purchase: ${NETWORK_CODES[mainNetwork]} ${plan_type} - ${cleanPhone}`,
     });
     } catch (error) {
       return res.status(400).json({ message: 'Error saving transaction.' });
