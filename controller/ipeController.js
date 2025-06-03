@@ -69,14 +69,7 @@ const verifyIPE = async (req, res) => {
   } catch (error) {
     console.error('IPE Verification Error:', error.response?.data || error.message);
 
-    if (error.response) {
-      return res.status(error.response.status).json({
-        message: error.response.data?.message || 'IPE verification failed',
-        error: error.response.data
-      });
-    }
-
-    return res.status(500).json({ message: 'Server error during BVN verification' });
+    return res.status(500).json({ message: error.response?.data || error.message });
   }
 };
 
