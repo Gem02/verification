@@ -69,7 +69,7 @@ const verifyIPE = async (req, res) => {
   } catch (error) {
     console.error('IPE Verification Error:', error.response?.data || error.message);
 
-    return res.status(500).json({ message: error.response?.data || error.message });
+    return res.status(500).json({ message:  error.message || 'Server error during IPE verification'});
   }
 };
 
