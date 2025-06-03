@@ -19,6 +19,9 @@ const verifyBvn = async (req, res) => {
     }
 
     const userAcc = await balanceCheck(userId, amount, pin);
+
+    userAcc.balance -= amount;
+    await userAcc.save();
     
     const response = await axios.post(
           `${base_url}/identitypass/verification/bvn`,

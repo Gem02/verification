@@ -21,6 +21,9 @@ const verifyNin = async (req, res) => {
 
     const userAcc = await balanceCheck(userId, amount, pin);
 
+    userAcc.balance -= amount;
+    await userAcc.save();
+
     console.log("balNCE DATA", userAcc);
     const response = await axios.post(
       `${base_url}/identitypass/verification/vnin`,

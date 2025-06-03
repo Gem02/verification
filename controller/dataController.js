@@ -36,7 +36,9 @@ const buyData = async (req, res) => {
 
 
     const userAcc = await balanceCheck(userId, amount, pin);
-    console.log("Balance data:", userAcc);
+    console.log("Balance data:", userAcc.balance);
+    userAcc.balance -= amount;
+    await userAcc.save();
 
     const token = process.env.BIBLALSUB_TOKEN;
     const url = process.env.BIBLALSUB_BASE_URL

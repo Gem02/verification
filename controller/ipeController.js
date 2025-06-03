@@ -23,6 +23,9 @@ const verifyIPE = async (req, res) => {
     const userAcc = await balanceCheck(userId, amount, pin);
     console.log("Current balance:", userAcc.balance);
 
+    userAcc.balance -= amount;
+    await userAcc.save();
+
     const apiUrl = process.env.DATA_VERIFY_URL;
     const apiKey = process.env.DATA_VERIFY_KEY;
     const transactionReference = generateTransactionRef();
