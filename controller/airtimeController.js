@@ -96,15 +96,7 @@ const buyAirtime = async (req, res) => {
 
   } catch (error) {
     console.error('Airtime Error:', error.response?.data || error.message);
-
-    if (error.response) {
-      return res.status(error.response.status).json({
-        message: error.response.data?.message || 'Error processing airtime purchase',
-        error: error.response.data
-      });
-    }
-
-    return res.status(500).json({ message: 'Server error during airtime purchase' });
+    return res.status(500).json({ message:  error.message || 'Server error during airtime purchase'});
   }
 };
 
