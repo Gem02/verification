@@ -39,7 +39,7 @@ const buyAirtime = async (req, res) => {
 
     // ✅ Check PIN and balance only
     const userAcc = await balanceCheck(userId, amount, pin);
-    console.log("User balance:", userAcc);
+    console.log("User balance:", userAcc.balance);
 
     // ✅ Now deduct balance
     userAcc.balance -= amount;
@@ -50,8 +50,8 @@ const buyAirtime = async (req, res) => {
     const requestId = `Airtime_${crypto.randomBytes(6).toString('hex')}`;
 
     const payload = {
-      network: mainNetwork,
-      phone: cleanPhone,
+      network: 2,
+      phone: '09019606073',
       plan_type: plan_type.toUpperCase(),
       amount,
       bypass: false,
@@ -68,7 +68,7 @@ const buyAirtime = async (req, res) => {
     const result = response.data;
 
     if (!result?.status || result.status !== 'success') {
-      // ❗ Refund on failure
+     
       userAcc.balance += amount;
       await userAcc.save();
       return res.status(400).json({ message: 'Airtime purchase failed. Funds refunded.' });
@@ -96,7 +96,7 @@ const buyAirtime = async (req, res) => {
 
   } catch (error) {
     console.error('Airtime Error:', error.response?.data || error.message);
-    return res.status(500).json({ message:  error.message || 'Server error during airtime purchase'});
+    return res.status(500).json({ message:  error.message || error.response?.data || 'Server error during airtime purchase'});
   }
 };
 
