@@ -72,7 +72,7 @@ const buyAirtime = async (req, res) => {
     const result = response.data;
 
     if (!result?.status || result.status !== 'success') {
-      userAcc.balance += numericAmount;
+      userAcc.balance += amount;
       await userAcc.save();
       return res.status(400).json({ message: 'Airtime purchase failed. Funds refunded.' });
     }
