@@ -1,20 +1,19 @@
 require('dotenv').config();
 const axios = require('axios');
-const crypto = require('crypto');
 const validator = require('validator');
 const { balanceCheck } = require('../utilities/compareBalance');
 const saveTransaction = require('../utilities/saveTransaction');
 
 const generateTransactionRef = () => 'IPE-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
 
-const verifyBvn = async (req, res) => {
-  const { bvn, userId, pin, amount } = req.body;
+const verifyIPE = async (req, res) => {
+  const { trackingId, userId, pin, amount } = req.body;
   console.log("IPE Verification Request:", req.body);
 
   try {
-    const cleanBvn = validator.escape(bvn || '');
-    if (!cleanBvn || !validator.isNumeric(cleanBvn) || cleanBvn.length !== 11) {
-      return res.status(400).json({ message: 'Invalid BVN. Must be 11 digits.' });
+    const cleanTrackingId = (trackingId || '').trim();
+    if (!validator.isAlphanumeric(cleanTrackingId) || cleanTrackingId.length < 6) {
+    return res.status(400).json({ message: 'Invalid Tracking ID.' });
     }
 
     if (!amount || isNaN(amount) || amount <= 0) {
@@ -30,7 +29,7 @@ const verifyBvn = async (req, res) => {
 
     const payload = {
       api_key: apiKey,
-      trackingID: cleanBvn
+      trackingID: cleanTrackingId
     };
 
     const response = await axios.post(`${apiUrl}/ipe`, payload, {
