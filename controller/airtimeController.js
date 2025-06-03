@@ -5,7 +5,7 @@ const validator = require('validator');
 const { balanceCheck } = require('../utilities/compareBalance');
 const saveTransaction = require('../utilities/saveTransaction');
 
-// Network code mapping
+
 const NETWORK_CODES = {
   '1': 'MTN',
   '2': 'AIRTEL',
