@@ -5,7 +5,6 @@ const validator = require('validator');
 const { balanceCheck } = require('../utilities/compareBalance');
 const saveTransaction = require('../utilities/saveTransaction');
 
-
 const NETWORK_CODES = {
   '1': 'MTN',
   '2': 'AIRTEL',
@@ -20,33 +19,34 @@ const buyAirtime = async (req, res) => {
   console.log("Airtime Request:", req.body);
 
   try {
-   
     const cleanPhone = validator.escape(phone || '');
     if (!cleanPhone || !validator.isMobilePhone(cleanPhone, 'en-NG')) {
       return res.status(400).json({ message: 'Please provide a valid phone number.' });
     }
 
     if (!amount || isNaN(amount) || amount <= 0) {
-        return res.status(400).json({ message: 'Invalid amount.' });
+      return res.status(400).json({ message: 'Invalid amount.' });
     }
 
     const mainNetwork = Number(network);
     if (!NETWORK_CODES[mainNetwork]) {
-      return res.status(400).json({
-        message: 'Invalid network'
-      });
+      return res.status(400).json({ message: 'Invalid network' });
     }
 
     if (!['VTU', 'SHARE'].includes(plan_type?.toUpperCase())) {
       return res.status(400).json({ message: 'Invalid plan type. Use "VTU" or "SHARE"' });
     }
 
-
+    // ✅ Check PIN and balance only
     const userAcc = await balanceCheck(userId, amount, pin);
     console.log("User balance:", userAcc);
 
+    // ✅ Now deduct balance
+    userAcc.balance -= amount;
+    await userAcc.save();
+
     const token = process.env.BIBLALSUB_TOKEN;
-    const url = process.env.BIBLALSUB_BASE_URL
+    const url = process.env.BIBLALSUB_BASE_URL;
     const requestId = `Airtime_${crypto.randomBytes(6).toString('hex')}`;
 
     const payload = {
@@ -58,40 +58,36 @@ const buyAirtime = async (req, res) => {
       "request-id": requestId
     };
 
-    const response = await axios.post(
-      `${url}/api/topup/`,
-      payload,
-      {
-        headers: {
-          Authorization: `Token ${token}`,
-          'Content-Type': 'application/json'
-        }
+    const response = await axios.post(`${url}/api/topup/`, payload, {
+      headers: {
+        Authorization: `Token ${token}`,
+        'Content-Type': 'application/json'
       }
-    );
+    });
 
     const result = response.data;
 
     if (!result?.status || result.status !== 'success') {
+      // ❗ Refund on failure
       userAcc.balance += amount;
       await userAcc.save();
       return res.status(400).json({ message: 'Airtime purchase failed. Funds refunded.' });
     }
 
     try {
-    await saveTransaction({
-      user: userId,
-      accountNumber: userAcc.accountNumber,
-      amount,
-      transactionReference: generateTransactionRef(),
-      TransactionType: 'Airtime-Purchase',
-      type: 'debit',
-      description: result.message || `Airtime purchase: ${NETWORK_CODES[mainNetwork]} ${plan_type} - ${cleanPhone}`,
-    });
+      await saveTransaction({
+        user: userId,
+        accountNumber: userAcc.accountNumber,
+        amount,
+        transactionReference: generateTransactionRef(),
+        TransactionType: 'Airtime-Purchase',
+        type: 'debit',
+        description: result.message || `Airtime purchase: ${NETWORK_CODES[mainNetwork]} ${plan_type} - ${cleanPhone}`,
+      });
     } catch (error) {
       return res.status(400).json({ message: 'Error saving transaction.' });
     }
 
-    console.log(result)
     return res.status(200).json({
       message: 'Airtime purchased successfully',
       data: result,

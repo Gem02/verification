@@ -13,19 +13,16 @@ const balanceCheck = async (userId, amount, pin) => {
   }
 
   const isMatch = await bcryptjs.compare(pin, userAcc.customerPin);
-  
   if (!isMatch) {
     throw new Error('Incorrect PIN.');
   }
-  
 
   if (userAcc.balance < amount) {
     throw new Error('Insufficient wallet balance.');
   }
 
-  userAcc.balance -= amount;
-  await userAcc.save();
+  // ✅ Only return userAcc, do not deduct here
   return userAcc;
 };
 
-module.exports = {balanceCheck};
+module.exports = { balanceCheck };
