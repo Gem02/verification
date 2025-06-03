@@ -56,7 +56,7 @@ const verifyIPE = async (req, res) => {
       transactionReference,
       TransactionType: 'IPE-Verification',
       type: 'debit',
-      description: `Verified IPE ${cleanBvn}`
+      description: `Verified IPE ${cleanTrackingId}`
     });
 
     console.log(result)
