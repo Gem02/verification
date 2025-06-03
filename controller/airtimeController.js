@@ -50,8 +50,8 @@ const buyAirtime = async (req, res) => {
     const requestId = `Airtime_${crypto.randomBytes(6).toString('hex')}`;
 
     const payload = {
-      network: 2,
-      phone: '09019606073',
+      network: mainNetwork,
+      phone: cleanPhone,
       plan_type: plan_type.toUpperCase(),
       amount,
       bypass: false,
