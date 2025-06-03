@@ -84,7 +84,7 @@ const buyData = async (req, res) => {
       return res.status(400).json({ message: 'Error saving transaction.' });
     }
 
-
+    console.log(result)
     return res.status(200).json({
       message: 'Data purchased successfully',
       data: result,

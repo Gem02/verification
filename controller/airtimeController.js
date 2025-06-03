@@ -90,6 +90,7 @@ const buyAirtime = async (req, res) => {
       return res.status(400).json({ message: 'Error saving transaction.' });
     }
 
+    console.log(result)
     return res.status(200).json({
       message: 'Airtime purchased successfully',
       data: result,

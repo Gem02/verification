@@ -59,6 +59,7 @@ const verifyIPE = async (req, res) => {
       description: `Verified IPE ${cleanBvn}`
     });
 
+    console.log(result)
     return res.status(200).json({
       message: 'IPE verified successfully',
       data: result,
