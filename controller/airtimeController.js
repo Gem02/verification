@@ -69,8 +69,8 @@ const buyAirtime = async (req, res) => {
     const response = await axios(config);
     const result = response.data;
 
-    if (!result?.status || result.status !== 'successful') {
-      console.log('the result is', result)
+    if (!result?.Status || result.Status !== 'successful') {
+      console.log('the result for not being succefull is', result)
       userAcc.balance += amount;
       await userAcc.save();
       return res.status(400).json({ message: 'Airtime purchase failed. Funds refunded.' });
@@ -85,7 +85,7 @@ const buyAirtime = async (req, res) => {
       type: 'debit',
       description: result.message || `Airtime purchase: ${NETWORK_CODES[mainNetwork]} ${plan_type} - ${cleanPhone}`,
     });
-
+    console.log('everything saved here is the data:', response)
     return res.status(200).json({
       message: 'Airtime purchased successfully',
       data: result,

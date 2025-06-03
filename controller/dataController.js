@@ -22,7 +22,7 @@ const buyData = async (req, res) => {
   try {
 
     const cleanPhone = validator.escape(phone || '');
-    if (!cleanPhone || !validator.isMobilePhone(phone, 'en-NG')) {
+    if (!cleanPhone || !validator.isMobilePhone(phone)) {
         return res.status(400).json({ message: 'Invalid phone number.' });
     }
     if (!amount || isNaN(amount) || amount <= 0) {
