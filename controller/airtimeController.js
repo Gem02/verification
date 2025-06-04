@@ -85,7 +85,7 @@ const buyAirtime = async (req, res) => {
       type: 'debit',
       description: result.message || `Airtime purchase: ${NETWORK_CODES[mainNetwork]} ${plan_type} - ${cleanPhone}`,
     });
-    console.log('everything saved here is the data:', response)
+    console.log('everything saved here is the data:', result)
     return res.status(200).json({
       message: 'Airtime purchased successfully',
       data: result,
