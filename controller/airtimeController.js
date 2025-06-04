@@ -60,7 +60,7 @@ const buyAirtime = async (req, res) => {
       maxBodyLength: Infinity,
       url: `${url}/topup/`,
       headers: {
-        Authorization: `Token ${token}`,
+        Authorization: `Token 7c1cab40c20100fa909dfe7fbd896681893fc6f7`,
         'Content-Type': 'application/json'
       },
       data: JSON.stringify(payload)
