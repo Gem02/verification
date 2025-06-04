@@ -58,7 +58,7 @@ const buyAirtime = async (req, res) => {
     const config = {
       method: 'post',
       maxBodyLength: Infinity,
-      url: `${url}/topup/`,
+      url: `https://www.husmodata.com/api/topup/`,
       headers: {
         Authorization: `Token 7c1cab40c20100fa909dfe7fbd896681893fc6f7`,
         'Content-Type': 'application/json'
