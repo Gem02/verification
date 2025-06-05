@@ -20,31 +20,23 @@ const buyData = async (req, res) => {
   console.log("Request data:", req.body);
 
   try {
-
     const cleanPhone = validator.escape(phone || '');
     if (!cleanPhone || !validator.isMobilePhone(cleanPhone, 'en-NG')) {
-          return res.status(400).json({ message: 'Please provide a valid phone number.' });
+      return res.status(400).json({ message: 'Please provide a valid phone number.' });
     }
 
     if (!amount || isNaN(amount) || amount <= 0) {
-        return res.status(400).json({ message: 'Invalid amount.' });
-    }
-    if (!NETWORK_CODES[network]) {
-      return res.status(400).json({
-        message: 'Invalid network'
-      });
+      return res.status(400).json({ message: 'Invalid amount.' });
     }
 
+    if (!NETWORK_CODES[network]) {
+      return res.status(400).json({ message: 'Invalid network' });
+    }
 
     const userAcc = await balanceCheck(userId, amount, pin);
-    console.log("Balance data:", userAcc.balance);
-    userAcc.balance -= amount;
-    await userAcc.save();
+    console.log("User balance before:", userAcc.balance);
 
-    const token = process.env.BIBLALSUB_TOKEN;
-    const url = process.env.BIBLALSUB_BASE_URL
     const requestId = `DATA_${crypto.randomBytes(6).toString('hex')}`;
-
     const payload = {
       network: parseInt(network),
       mobile_number: cleanPhone,
@@ -64,13 +56,19 @@ const buyData = async (req, res) => {
     );
 
     const result = response.data;
-    console.log('the result is:', result);
+    console.log('Result:', result);
 
+    // Only proceed if the purchase was successful
     if (!result?.status || result.status !== 'success') {
-      userAcc.balance += amount;
-      await userAcc.save();
-      return res.status(400).json({ message: 'Data purchase failed. Funds have been refunded.', fullResponse:result });
+      return res.status(400).json({
+        message: 'Data purchase failed. No debit was made.',
+        fullResponse: result
+      });
     }
+
+    // ✅ Now safely debit user and save
+    userAcc.balance -= amount;
+    await userAcc.save();
 
     try {
       await saveTransaction({
@@ -81,13 +79,11 @@ const buyData = async (req, res) => {
         TransactionType: 'Data-Purchase',
         type: 'debit',
         description: result.message || `Data purchase for ${NETWORK_CODES[network]} - ${result.dataplan}`,
-        
       });
     } catch (error) {
       return res.status(400).json({ message: 'Error saving transaction.' });
     }
 
-    console.log(result)
     return res.status(200).json({
       message: 'Data purchased successfully',
       data: result,
@@ -96,8 +92,11 @@ const buyData = async (req, res) => {
 
   } catch (error) {
     console.error('Data purchase error:', error.response?.data || error.message);
-    return res.status(400).json({ message: error.response?.data || error.message || 'Error processing data purchase',  fullResponse:result})
+    return res.status(400).json({
+      message: error.response?.data || error.message || 'Error processing data purchase',
+    });
   }
 };
+
 
 module.exports = { buyData };
