@@ -54,13 +54,15 @@ const buyAirtime = async (req, res) => {
       Ported_number: true,
       airtime_type: plan_type.toUpperCase()
     };
-
+//7c1cab40c20100fa909dfe7fbd896681893fc6f7
     const config = {
       method: 'post',
       maxBodyLength: Infinity,
       url: `https://www.husmodata.com/api/topup/`,
+
+
       headers: {
-        Authorization: `Token 7c1cab40c20100fa909dfe7fbd896681893fc6f7`,
+        Authorization: `Token 1b1064c5d139ecedbaca1f5686dc4f17a0952c73`,
         'Content-Type': 'application/json'
       },
       data: JSON.stringify(payload)
