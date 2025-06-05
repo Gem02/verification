@@ -6,7 +6,7 @@ const cacRegistrationSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   otherName: { type: String },
   dateOfBirth: { type: Date, required: true },
-  gender: { type: String, enum: ['Male', 'Female', 'Other'], required: true },
+  gender: { type: String, required: true },
   phoneNumber: { type: String, required: true },
   homeAddress: { type: String },
   officeAddress: { type: String },
