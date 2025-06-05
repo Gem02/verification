@@ -95,16 +95,7 @@ const buyData = async (req, res) => {
 
   } catch (error) {
     console.error('Data purchase error:', error.response?.data || error.message);
-    
-    if (error.response) {
-      return res.status(error.response.status).json({ 
-        message: error.response.data?.message || 'Error processing data purchase',
-        error: error.response.data
-      });
-    }
-    return res.status(500).json({ 
-      message: error.message || 'Server error during data purchase' 
-    });
+    return res.status(400).json({ message: error.response?.data || error.message || 'Error processing data purchase'})
   }
 };
 
