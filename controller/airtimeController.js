@@ -64,7 +64,7 @@ const buyAirtime = async (req, res) => {
 
 
       headers: {
-        Authorization: `Token 7c1cab40c20100fa909dfe7fbd896681893fc6f7`,
+        Authorization: `Token 1b1064c5d139ecedbaca1f5686dc4f17a0952c73`,
         'Content-Type': 'application/json'
       },
       data: JSON.stringify(payload)
