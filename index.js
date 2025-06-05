@@ -13,6 +13,7 @@ const verifications = require('./route/mainVerificationsRoute');
 const transactions = require('./route/transactionRoute');
 const vtuPurchase = require('./route/vtuRoute');
 const cacRoute = require('./route/cacRoute');
+const bvnRoute = require('./route/bvnRoute')
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/api/verify', verifications);
 app.use('/api/transactions', transactions);
 app.use('/api/vtu', vtuPurchase);
 app.use('/api/cac', cacRoute);
+app.use('/api/bvn', bvnRoute);
 
 
 const PORT = process.env.PORT || 8000;
