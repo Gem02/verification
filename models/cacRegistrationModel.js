@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const cacRegistrationSchema = new mongoose.Schema({
+  userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
   registrationType: { type: String, enum: ['BN', 'LLC', 'NGO'], required: true },
   surname: { type: String, required: true },
   firstName: { type: String, required: true },

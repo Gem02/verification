@@ -3,6 +3,7 @@ const CacRegistration = require('../models/cacRegistrationModel');
 const registerCAC = async (req, res) => {
   try {
     const {
+      userId,
       registrationType,
       surname,
       firstName,
@@ -26,6 +27,7 @@ const registerCAC = async (req, res) => {
 
 
     const newRegistration = new CacRegistration({
+      userId,
       registrationType,
       surname,
       firstName,
@@ -48,7 +50,7 @@ const registerCAC = async (req, res) => {
     });
 
     await newRegistration.save();
-    res.status(201).json({ message: 'Registration saved successfully', data: newRegistration });
+    res.status(200).json({ message: 'Registration saved successfully', data: newRegistration });
 
   } catch (error) {
     console.error(error);

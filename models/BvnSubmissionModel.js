@@ -2,6 +2,10 @@
 const mongoose = require('mongoose');
 
 const BvnSubmissionSchema = new mongoose.Schema({
+  userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
   bankName: { type: String},
   stateOfResidence: { type: String},
   lga: { type: String},

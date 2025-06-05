@@ -8,7 +8,7 @@ const submitBvnData = async (req, res) => {
     const submission = new BvnSubmission(payload);
     await submission.save();
 
-    res.status(201).json({ message: 'BVN data submitted successfully' });
+    res.status(200).json({ message: 'BVN data submitted successfully' });
   } catch (error) {
     console.error('❌ Error saving BVN submission:', error);
     res.status(500).json({ error: 'Something went wrong while saving BVN data' });
