@@ -7,9 +7,9 @@ const saveTransaction = require('../utilities/saveTransaction');
 
 const NETWORK_CODES = {
   '1': 'MTN',
-  '2': 'AIRTEL',
-  '3': 'GLO',
-  '4': '9MOBILE'
+  '2': 'GLO',
+  '3': '9MOBILE',
+  '4': 'AIRTEL'
 };
 
 const generateTransactionRef = () => 'DATA-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
@@ -22,9 +22,10 @@ const buyData = async (req, res) => {
   try {
 
     const cleanPhone = validator.escape(phone || '');
-    if (!cleanPhone || !validator.isMobilePhone(phone)) {
-        return res.status(400).json({ message: 'Invalid phone number.' });
+    if (!cleanPhone || !validator.isMobilePhone(cleanPhone, 'en-NG')) {
+          return res.status(400).json({ message: 'Please provide a valid phone number.' });
     }
+
     if (!amount || isNaN(amount) || amount <= 0) {
         return res.status(400).json({ message: 'Invalid amount.' });
     }
@@ -46,18 +47,17 @@ const buyData = async (req, res) => {
 
     const payload = {
       network: parseInt(network),
-      phone: cleanPhone,
-      data_plan: parseInt(dataPlan),
-      bypass: false,
-      "request-id": requestId
+      mobile_number: cleanPhone,
+      plan: parseInt(dataPlan),
+      Ported_number: true
     };
 
     const response = await axios.post(
-      `${url}/api/data`,
+      `https://www.husmodata.com/api/data/`,
       payload,
       {
         headers: {
-          Authorization: `Token ${token}`,
+          Authorization: `Token 1b1064c5d139ecedbaca1f5686dc4f17a0952c73`,
           'Content-Type': 'application/json'
         }
       }
