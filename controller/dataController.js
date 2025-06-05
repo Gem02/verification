@@ -64,11 +64,12 @@ const buyData = async (req, res) => {
     );
 
     const result = response.data;
+    console.log('the result is:', result);
 
     if (!result?.status || result.status !== 'success') {
       userAcc.balance += amount;
       await userAcc.save();
-      return res.status(400).json({ message: 'Data purchase failed. Funds have been refunded.' });
+      return res.status(400).json({ message: 'Data purchase failed. Funds have been refunded.', fullResponse:result });
     }
 
     try {
@@ -95,7 +96,7 @@ const buyData = async (req, res) => {
 
   } catch (error) {
     console.error('Data purchase error:', error.response?.data || error.message);
-    return res.status(400).json({ message: error.response?.data || error.message || 'Error processing data purchase'})
+    return res.status(400).json({ message: error.response?.data || error.message || 'Error processing data purchase',  fullResponse:result})
   }
 };
 
