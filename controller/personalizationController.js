@@ -1,0 +1,68 @@
+require('dotenv').config();
+const axios = require('axios');
+const validator = require('validator');
+const { balanceCheck } = require('../utilities/compareBalance');
+const saveTransaction = require('../utilities/saveTransaction');
+
+const personalization = async (req, res) => {
+  const { verifyWith, slipLayout, trackingID,  amount, userId, pin } = req.body;
+
+  if (!trackingID) {
+    return res.status(400).json({ message: 'trackingID is required.' });
+  }
+
+  if (!amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ message: 'Invalid amount.' });
+  }
+
+  const userAcc = await balanceCheck(userId, amount, pin);
+
+  const cleanTrackingId = validator.escape(trackingID || '');
+  const api_key = process.env.DATA_VERIFY_KEY;
+  const transactionReference = generateTransactionRef();
+
+  try {
+    const apiUrl = 'https://dataverify.com.ng/developers/nin_slips/nin_regular_per.php';
+
+    const payload = {
+      api_key: api_key, 
+      trackingID: cleanTrackingId
+    };
+
+    const response = await axios.post(apiUrl, payload, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log('the response is', response.data)
+
+    if ( !response.status === 200) {
+      return res.status(response.status).json({
+        message: 'Request failed',
+        data: response.data
+      });
+    }
+
+     userAcc.balance -= amount;
+     await userAcc.save();
+
+     await saveTransaction({
+        user: userId,
+        accountNumber: userAcc.accountNumber,
+        amount,
+        transactionReference,
+        TransactionType: 'Personalization',
+        type: 'debit',
+        description: `Personalization ${cleanTrackingId}`
+        });
+
+      return res.status(200).json({ message: 'Success', data: response.data, verifyWith, slipLayout, });
+
+  } catch (error) {
+        console.error('Error fetching NIN slip:', error.message);
+        return res.status(500).json({
+        message: error.response?.data || error.message || 'Server error' })
+    }
+};
+
+module.exports = { personalization };
