@@ -41,9 +41,6 @@ const buyAirtime = async (req, res) => {
     console.log("User balance before deduction:", userAcc.balance);
 
 
-    userAcc.balance -= amount;
-    await userAcc.save();
-
      const token = process.env.UNIQUE_TOKEN;
      const url = process.env.UNIQUE_URL;
 
@@ -75,10 +72,11 @@ const buyAirtime = async (req, res) => {
 
     if (!result?.Status || result.Status !== 'successful') {
       console.log('the result for not being succefull is', result)
-      userAcc.balance += amount;
-      await userAcc.save();
       return res.status(400).json({ message: 'Airtime purchase failed. Funds refunded.' });
     }
+
+    userAcc.balance -= amount;
+    await userAcc.save();
 
     await saveTransaction({
       user: userId,

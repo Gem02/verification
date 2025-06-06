@@ -59,10 +59,9 @@ const buyData = async (req, res) => {
     console.log('Result:', result);
 
     // Only proceed if the purchase was successful
-    if (!result?.status || result.status !== 'success') {
+    if (!result?.Status || result.Status !== 'successful') {
       return res.status(400).json({
         message: 'Data purchase failed. No debit was made.',
-        fullResponse: result
       });
     }
 
