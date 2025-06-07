@@ -37,6 +37,7 @@ const transactionSchema = new mongoose.Schema({
     type: String,
     default: 'Wallet transaction',
   },
+  phone: { type: String },
   createdAt: {
     type: Date,
     default: Date.now,

@@ -78,6 +78,7 @@ const buyData = async (req, res) => {
         TransactionType: 'Data-Purchase',
         type: 'debit',
         description: result.message || `Data purchase for ${NETWORK_CODES[network]} - ${result.dataplan}`,
+        phone: cleanPhone
       });
     } catch (error) {
       return res.status(400).json({ message: 'Error saving transaction.' });
