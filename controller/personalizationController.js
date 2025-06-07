@@ -4,6 +4,8 @@ const validator = require('validator');
 const { balanceCheck } = require('../utilities/compareBalance');
 const saveTransaction = require('../utilities/saveTransaction');
 
+const generateTransactionRef = () => 'PER-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
 const personalization = async (req, res) => {
   const { verifyWith, slipLayout, trackingId,  amount, userId, pin } = req.body;
 
