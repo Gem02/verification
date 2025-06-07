@@ -21,15 +21,15 @@ const personalization = async (req, res) => {
   const userAcc = await balanceCheck(userId, amount, pin);
 
   const cleanTrackingId = validator.escape(trackingId || '');
-  const api_key = process.env.DATA_VERIFY_KEY;
+  const key = process.env.DATA_VERIFY_KEY;
   const transactionReference = generateTransactionRef();
 
   try {
     const apiUrl = 'https://dataverify.com.ng/developers/nin_slips/nin_regular_per.php';
 
     const payload = {
-      api_key: api_key, 
-      trackingId: cleanTrackingId
+      api_key: key, 
+      trackingID: cleanTrackingId
     };
 
     const response = await axios.post(apiUrl, payload, {
