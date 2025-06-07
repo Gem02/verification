@@ -62,7 +62,7 @@ const personalization = async (req, res) => {
       return res.status(200).json({ message: 'Success', data: response.data, verifyWith, slipLayout, });
 
   } catch (error) {
-        console.error('Error fetching NIN slip:', error.message);
+        console.error('Error fetching NIN slip:', error);
         return res.status(500).json({
         message: error.response?.data || error.message || 'Server error' })
     }
