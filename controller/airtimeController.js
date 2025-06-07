@@ -60,7 +60,7 @@ const buyAirtime = async (req, res) => {
     const config = {
       method: 'post',
       maxBodyLength: Infinity,
-      url: `${husmoDataURL}`,
+      url: `{https://www.husmodata.com/api/topup/}`,
 
 
       headers: {
