@@ -36,7 +36,7 @@ const buyData = async (req, res) => {
     const userAcc = await balanceCheck(userId, amount, pin);
     console.log("User balance before:", userAcc.balance);
 
-    const requestId = `DATA_${crypto.randomBytes(6).toString('hex')}`;
+   // const requestId = `DATA_${crypto.randomBytes(6).toString('hex')}`;
     const payload = {
       network: parseInt(network),
       mobile_number: cleanPhone,

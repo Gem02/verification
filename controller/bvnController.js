@@ -20,8 +20,7 @@ const verifyBvn = async (req, res) => {
 
     const userAcc = await balanceCheck(userId, amount, pin);
 
-    userAcc.balance -= amount;
-    await userAcc.save();
+   
     
     const response = await axios.post(
           `${base_url}/identitypass/verification/bvn`,
@@ -33,18 +32,19 @@ const verifyBvn = async (req, res) => {
               'Content-Type': 'application/json',
             },
           }
-        );
+     );
 
     const result = response.data;
 
     if (!result?.status || result.verification?.status !== 'VERIFIED') {
-  
-      userAcc.balance += amount;
       await userAcc.save();
       return res.status(400).json({ message: ' BVN verification failed.' });
     }
 
-     await saveTransaction({
+    userAcc.balance -= amount;
+    await userAcc.save();
+
+    await saveTransaction({
           user: userId,
           accountNumber: userAcc.accountNumber,
           amount,

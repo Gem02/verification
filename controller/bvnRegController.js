@@ -1,4 +1,4 @@
-// controllers/bvnController.js
+
 const BvnSubmission = require('../models/BvnSubmissionModel');
 
 const submitBvnData = async (req, res) => {
