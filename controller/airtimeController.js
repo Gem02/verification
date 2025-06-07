@@ -54,6 +54,7 @@ const buyAirtime = async (req, res) => {
 //7c1cab40c20100fa909dfe7fbd896681893fc6f7
 //7c1cab40c20100fa909dfe7fbd896681893fc6f7
 //979cb606cad762769bb0ba1b8102c883b5b1edfb
+//7b021f9ec21726e66c5b3790c6ea3bcb2f8db47f
 
 //1b1064c5d139ecedbaca1f5686dc4f17a0952c73
     const config = {
@@ -63,7 +64,7 @@ const buyAirtime = async (req, res) => {
 
 
       headers: {
-        Authorization: `Token 979cb606cad762769bb0ba1b8102c883b5b1edfb`,
+        Authorization: `Token 7b021f9ec21726e66c5b3790c6ea3bcb2f8db47f`,
         'Content-Type': 'application/json'
       },
       data: JSON.stringify(payload)
