@@ -23,9 +23,6 @@ const verifyIPE = async (req, res) => {
     const userAcc = await balanceCheck(userId, amount, pin);
     console.log("Current balance:", userAcc.balance);
 
-    userAcc.balance -= amount;
-    await userAcc.save();
-
     const apiUrl = process.env.DATA_VERIFY_URL;
     const apiKey = process.env.DATA_VERIFY_KEY;
     const transactionReference = generateTransactionRef();
@@ -44,13 +41,10 @@ const verifyIPE = async (req, res) => {
     const result = response.data;
 
     if (!result || typeof result !== 'object') {
-     
-      userAcc.balance += Number(amount);
-      await userAcc.save();
-
       return res.status(400).json({ message: 'Server Error. Funds refunded.' });
     }
-
+    userAcc.balance -= amount;
+    await userAcc.save();
  
     await saveTransaction({
       user: userId,
