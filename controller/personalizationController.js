@@ -5,10 +5,11 @@ const { balanceCheck } = require('../utilities/compareBalance');
 const saveTransaction = require('../utilities/saveTransaction');
 
 const personalization = async (req, res) => {
-  const { verifyWith, slipLayout, trackingID,  amount, userId, pin } = req.body;
+  const { verifyWith, slipLayout, trackingId,  amount, userId, pin } = req.body;
 
-  if (!trackingID) {
-    return res.status(400).json({ message: 'trackingID is required.' });
+  console.log('the request isL', req.body)
+  if (!trackingId) {
+    return res.status(400).json({ message: 'trackingId is required.' });
   }
 
   if (!amount || isNaN(amount) || amount <= 0) {
@@ -17,7 +18,7 @@ const personalization = async (req, res) => {
 
   const userAcc = await balanceCheck(userId, amount, pin);
 
-  const cleanTrackingId = validator.escape(trackingID || '');
+  const cleanTrackingId = validator.escape(trackingId || '');
   const api_key = process.env.DATA_VERIFY_KEY;
   const transactionReference = generateTransactionRef();
 
@@ -26,7 +27,7 @@ const personalization = async (req, res) => {
 
     const payload = {
       api_key: api_key, 
-      trackingID: cleanTrackingId
+      trackingId: cleanTrackingId
     };
 
     const response = await axios.post(apiUrl, payload, {
