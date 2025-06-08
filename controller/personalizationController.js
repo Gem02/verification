@@ -2,7 +2,7 @@ require('dotenv').config();
 const axios = require('axios');
 const validator = require('validator');
 const { balanceCheck } = require('../utilities/compareBalance');
-const saveTransaction = require('../utilities/saveTransaction');
+const {saveTransaction} = require('../utilities/saveTransaction');
 
 const generateTransactionRef = () => 'PER-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
 

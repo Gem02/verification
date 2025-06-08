@@ -2,7 +2,7 @@ require('dotenv').config();
 const axios = require('axios');
 const validator = require('validator');
 const { balanceCheck } = require('../utilities/compareBalance');
-const saveTransaction = require('../utilities/saveTransaction');
+const {saveTransaction, saveDataHistory} = require('../utilities/saveTransaction');
 
 const generateTransactionRef = () => 'IPE-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
 
@@ -45,6 +45,12 @@ const verifyIPE = async (req, res) => {
     }
     userAcc.balance -= amount;
     await userAcc.save();
+
+    await saveDataHistory({
+      data: result,
+      dataFor: 'IPE-Slip',
+      userId,
+    });
  
     await saveTransaction({
       user: userId,

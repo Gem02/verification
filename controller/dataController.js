@@ -1,9 +1,8 @@
 require('dotenv').config();
 const axios = require('axios');
-const crypto = require('crypto');
 const validator = require('validator');
 const { balanceCheck } = require('../utilities/compareBalance');
-const saveTransaction = require('../utilities/saveTransaction');
+const {saveTransaction} = require('../utilities/saveTransaction');
 
 const NETWORK_CODES = {
   '1': 'MTN',

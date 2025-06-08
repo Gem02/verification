@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const VirtualAccount = require('../models/VirtualAccountModel');
-const Transaction = require('../models/transactions');
+const {Transaction} = require('../models/transactions');
 
 const MONNIFY_SECRET = process.env.MONNIFY_SECRET_KEY;
 

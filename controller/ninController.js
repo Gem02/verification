@@ -2,7 +2,7 @@ require('dotenv').config();
 const axios = require('axios');
 const validator = require('validator');
 const {balanceCheck} = require('../utilities/compareBalance');
-const saveTransaction = require('../utilities/saveTransaction');
+const {saveTransaction, saveDataHistory} = require('../utilities/saveTransaction');
 
 
 const generateTransactionRef = () => 'TXN-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
@@ -42,6 +42,14 @@ const verifyNin = async (req, res) => {
 
     userAcc.balance -= amount;
     await userAcc.save();
+
+    await saveDataHistory({
+      data: result,
+      dataFor: 'NIN-Slip',
+      verifyWith,
+      slipLayout,
+      userId,
+    });
 
     await saveTransaction({
       user: userId,

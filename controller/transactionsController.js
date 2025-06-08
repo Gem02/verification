@@ -1,4 +1,5 @@
 const Transaction = require('../models/transactions');
+const DataHistory = require('../models/dataHistoryModel');
 
 const getTransactionHistory = async (req, res) => {
   const { userId } = req.params; 
@@ -21,4 +22,25 @@ const getTransactionHistory = async (req, res) => {
   }
 };
 
-module.exports = { getTransactionHistory };
+const getDataHistory = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const findData = await  DataHistory.find({ userId }).sort({ createdAt: -1 });
+
+    if (!findData || findData.length ===  0) {
+      return res.status(404).json({ message: 'No data history found.' });
+    }
+
+     return res.status(200).json({
+      message: ' Data history retrieved successfully.',
+      count: findData.length,
+      findData,
+    });
+
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error while retrieving data.' });
+  }
+}
+
+module.exports = { getTransactionHistory, getDataHistory };

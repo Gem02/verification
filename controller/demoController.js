@@ -2,7 +2,7 @@ require('dotenv').config();
 const axios = require('axios');
 const validator = require('validator');
 const { balanceCheck } = require('../utilities/compareBalance');
-const saveTransaction = require('../utilities/saveTransaction');
+const {saveTransaction, saveDataHistory} = require('../utilities/saveTransaction');
 
 const generateTransactionRef = () => 'DMO-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
 
@@ -42,7 +42,8 @@ const demographic = async (req, res) => {
       }
     });
 
-    console.log('API response:', response.data);
+    const result = response.data;
+    console.log('API response:', result);
 
     if (response.status !== 200) {
       return res.status(response.status).json({
@@ -54,6 +55,12 @@ const demographic = async (req, res) => {
     // Debit user
     userAcc.balance -= amount;
     await userAcc.save();
+
+    await saveDataHistory({
+      data: result,
+      dataFor: 'Demographic-Slip',
+      userId,
+    });
 
     // Record transaction
     await saveTransaction({
