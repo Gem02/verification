@@ -79,7 +79,7 @@ const demographic = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching NIN standard slip:', error.message);
+    console.error('Error fetching NIN standard slip:', error);
     return res.status(500).json({
       message: error.response?.data || error.message || 'Server error'
     });
