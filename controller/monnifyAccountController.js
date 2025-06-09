@@ -131,5 +131,44 @@ const checkPin = async (req, res) => {
   }
 };
 
+const resetPin = async (req, res) => {
+  try {
+    const { userId, oldPin, newPin } = req.body;
 
-module.exports = { createAccount, getUserVirtualAccount, setPin, checkPin };
+    if (!userId || !oldPin || !newPin) {
+      return res.status(400).json({ message: 'User ID, old PIN, and new PIN are required.' });
+    }
+
+    if (!/^\d{4}$/.test(newPin)) {
+      return res.status(400).json({ message: 'New PIN must be a 4-digit number.' });
+    }
+
+   
+    const account = await VirtualAccount.findOne({ user: userId });
+    if (!account) {
+      return res.status(404).json({ message: 'User account not found.' });
+    }
+
+    if (!account.customerPin) {
+      return res.status(400).json({ message: 'No existing PIN found. Use the set route instead.' });
+    }
+
+    const isMatch = await bcryptjs.compare(oldPin, account.customerPin);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Old PIN is incorrect.' });
+    }
+
+    const hashedNewPin = await bcryptjs.hash(newPin, 10);
+    account.customerPin = hashedNewPin;
+    await account.save();
+
+    return res.status(200).json({ message: 'PIN has been reset successfully.' });
+
+  } catch (error) {
+    console.error('Error resetting PIN:', error);
+    return res.status(500).json({ message: 'Server error while resetting PIN.' });
+  }
+};
+
+
+module.exports = { createAccount, getUserVirtualAccount, setPin, checkPin, resetPin };
