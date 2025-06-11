@@ -32,14 +32,16 @@ const verifyIPE = async (req, res) => {
       trackingID: cleanTrackingId
     };
 
-    const response = await axios.post(`${apiUrl}/ipe`, payload, {
+    const response = await axios.post(`${apiUrl}/ipe_status.php`, payload, {
       headers: {
         'Content-Type': 'application/json'
       }
     });
 
-    const result = response.data;
 
+
+    const result = response.data;
+    console.log('the result is:', result);
     if (!result || typeof result !== 'object') {
       return res.status(400).json({ message: 'Server Error. Funds refunded.' });
     }
