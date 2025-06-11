@@ -2,15 +2,12 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
-    host: 'mail.ayverify.com.ng',
-    port: 465,
-    secure: true,
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false,
     auth: {
-        user: 'support@ayverify.com.ng',
-        pass: 'Nigeria@66'
-    },
-    tls: {
-        rejectUnauthorized: false
+        user: '8f648f001@smtp-brevo.com',
+        pass: 'O3saNTy9Vf62758B'
     }
 });
 

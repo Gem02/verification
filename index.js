@@ -45,7 +45,7 @@ app.use('/api/bvn', bvnRoute);
 app.use('/api/modify', ninModify);
 app.use('/api/demographic', demo);
 
-
+sendVerificationEmail()
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () =>{
