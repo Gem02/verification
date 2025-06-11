@@ -4,7 +4,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const { secureHeaders,limiter,hpp} = require('./middleware/security');
-
+const {sendVerificationEmail} = require('./utilities/emailTemplate')
 
 const authRoutes = require('./route/authRoutes');
 const virtualAccount = require('./route/accountRoute');
@@ -44,6 +44,7 @@ app.use('/api/cac', cacRoute);
 app.use('/api/bvn', bvnRoute);
 app.use('/api/modify', ninModify);
 app.use('/api/demographic', demo);
+
 
 
 const PORT = process.env.PORT || 8000;
