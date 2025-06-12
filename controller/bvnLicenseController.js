@@ -9,7 +9,7 @@ const submitBvnLicense = async (req, res) => {
 
     res.status(200).json({ message: 'BVN licensing submitted successfully' });
   } catch (error) {
-    console.error('❌ Error saving BVN licensing:', error);
+    console.error(' Error saving BVN licensing:', error);
     res.status(500).json({ error: 'Failed to save BVN licensing' });
   }
 };
