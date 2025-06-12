@@ -16,6 +16,7 @@ const cacRoute = require('./route/cacRoute');
 const bvnRoute = require('./route/bvnRoute')
 const ninModify = require('./route/ninModificationRoute');
 const demo = require('./route/demograpgicModel');
+const enroll = require('./route/enrollmentRoute')
 
 const app = express();
 
@@ -44,8 +45,9 @@ app.use('/api/cac', cacRoute);
 app.use('/api/bvn', bvnRoute);
 app.use('/api/modify', ninModify);
 app.use('/api/demographic', demo);
+app.use('/api/enrollment', enroll)
 
-sendVerificationEmail()
+//sendVerificationEmail()
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () =>{
