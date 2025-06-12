@@ -30,6 +30,10 @@ const enrollmentSchema = new mongoose.Schema({
   dateOfBirth: {
     type: Date,
     required: true,
+    set: (val) => {
+      const [day, month, year] = val.split("-");
+      return new Date(`${year}-${month}-${day}`);
+    }
   },
   stateOfOrigin: {
     type: String,
@@ -45,7 +49,6 @@ const enrollmentSchema = new mongoose.Schema({
   },
   gender: {
     type: String,
-    enum: ["Male", "Female", "Other"],
     required: true,
   },
   height: {
