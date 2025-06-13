@@ -190,6 +190,59 @@ const login = async (req, res) => {
     }
 };
 
+const loginAdmin = async (req, res) => {
+  try {
+    const email = validator.normalizeEmail(req.body.email || '');
+    const password = validator.escape(req.body.password || '');
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user || !['admin', 'super-admin'].includes(user.role)) {
+      return res.status(401).json({ message: 'Unauthorized: Invalid role or user.' });
+    }
+
+    
+    const isMatch = await bcryptjs.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email or password.' });
+    }
+
+    const accessToken = generateAccessToken(userInfo._id, userInfo.email, userInfo.role);
+    const refreshToken = generateRefreshToken(userInfo._id, userInfo.email, userInfo.role);
+
+    res.cookie('accessToken', accessToken, {
+        maxAge: 15 * 60 * 1000,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'None'
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'None'
+    });
+
+
+    return res.status(200).json({
+        id: userInfo._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
 const logout = (req, res) => {
     res.clearCookie('accessToken', {
         httpOnly: true,
@@ -231,4 +284,4 @@ const logout = (req, res) => {
     }
 } */
 
-module.exports = { registerUser, login, logout, sendForgotPasswordCode, verifyCode, newPassword};
+module.exports = { registerUser, login, logout, sendForgotPasswordCode, verifyCode, newPassword, loginAdmin};
