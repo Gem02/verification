@@ -199,7 +199,7 @@ const loginAdmin = async (req, res) => {
         return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({ email }).select('+password');
     if (!user || !['admin', 'super-admin'].includes(user.role)) {
       return res.status(401).json({ message: 'Unauthorized: Invalid role or user.' });
     }
@@ -210,8 +210,8 @@ const loginAdmin = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
 
-    const accessToken = generateAccessToken(userInfo._id, userInfo.email, userInfo.role);
-    const refreshToken = generateRefreshToken(userInfo._id, userInfo.email, userInfo.role);
+    const accessToken = generateAccessToken(user._id, user.email, user.role);
+    const refreshToken = generateRefreshToken(user._id, user.email, user.role);
 
     res.cookie('accessToken', accessToken, {
         maxAge: 15 * 60 * 1000,
@@ -229,7 +229,7 @@ const loginAdmin = async (req, res) => {
 
 
     return res.status(200).json({
-        id: userInfo._id,
+        id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
