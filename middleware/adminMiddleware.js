@@ -2,13 +2,13 @@ const UserModel = require('../models/User');
 
 const verifyAdmin = async (req, res, next) => {
   try {
-    const adminUserId = req.params 
+    const adminUserId = req.params ;
 
     if (!adminUserId) {
       return res.status(400).json({ message: 'Admin user ID is required' });
     }
 
-    const admin = await UserModel.findById(adminUserId);
+    const admin = await UserModel.findById({_id: adminUserId});
 
     if (!admin || !['admin', 'super-admin'].includes(admin.role)) {
       return res.status(403).json({ message: 'Unauthorized: Not an admin' });
