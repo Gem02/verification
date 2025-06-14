@@ -199,7 +199,7 @@ const loginAdmin = async (req, res) => {
         return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await UserModel.findOne({ email });
     if (!user || !['admin', 'super-admin'].includes(user.role)) {
       return res.status(401).json({ message: 'Unauthorized: Invalid role or user.' });
     }
