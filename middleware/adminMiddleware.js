@@ -2,7 +2,7 @@ const UserModel = require('../models/User');
 
 const verifyAdmin = async (req, res, next) => {
   try {
-    const adminUserId = req.body.adminUserId || req.query.adminUserId;
+    const adminUserId = req.params 
 
     if (!adminUserId) {
       return res.status(400).json({ message: 'Admin user ID is required' });
