@@ -70,7 +70,11 @@ const UserSchema = new mongoose.Schema({
   isLocked: {
     type: Boolean,
     default: false
-  }
+  },
+  lastLogin: {
+    type: Date,
+    default: null
+  },
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
