@@ -5,6 +5,6 @@ const { verifyAdmin } = require('../middleware/adminMiddleware');
 
 router.get('/users/:adminUserId', verifyAdmin, getAllUsers);
 router.get('/transactions/:adminUserId', verifyAdmin, getAllTransactions);
-router.patch('updateUser/:adminUserId', updateUser);
+router.patch('/updateUser/:adminUserId', updateUser);
 
 module.exports = router;
