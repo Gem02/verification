@@ -29,7 +29,7 @@ app.use(secureHeaders);
 app.use(hpp);
 app.use(cors({
   origin: process.env.CORS_WHITELIST.split(','),
-  methods: 'GET,POST,PUT,DELETE',
+  methods: 'GET,POST,PUT,DELETE,PATCH',
   credentials: true,
 }));
 
