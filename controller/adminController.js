@@ -1,5 +1,10 @@
 const UserModel = require('../models/User');
 const TransactionModel = require('../models/transactions');
+const BvnLicenseSubmission = require('../models/BvnLicenseModel');
+const BvnSubmission = require('../models/BvnSubmissionModel');
+const CacRegistration = require('../models/cacRegistrationModel');
+const Enrollment = require("../models/EnrollmentModel");
+const NinModification = require('../models/NinModificationModel'); 
 
 const getAllUsers = async (req, res) => {
   try {
@@ -14,12 +19,62 @@ const getAllUsers = async (req, res) => {
 const getAllTransactions = async (req, res) => {
   try {
     const transactions = await TransactionModel.find().sort({ createdAt: -1 });
-    res.json(transactions);
+    res.status(200).json(transactions);
   } catch (err) {
     console.error('Error fetching transactions:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+const getAllBankAgency = async (req, res) => {
+  try {
+    const bankAgency = await BvnSubmission.find().sort({ createdAt: -1 });
+    res.status(200).json(bankAgency);
+  } catch (err) {
+    console.error('Error fetching transactions:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+const getAllCacReg = async (req, res) => {
+  try {
+    const cacReg = await CacRegistration.find().sort({ createdAt: -1 });
+    res.status(200).json(cacReg);
+  } catch (err) {
+    console.error('Error fetching transactions:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+const getAllEnrollment = async (req, res) => {
+  try {
+    const enrollment = await Enrollment.find().sort({ createdAt: -1 });
+    res.status(200).json(enrollment);
+  } catch (err) {
+    console.error('Error fetching transactions:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+const getAllNinModifications = async (req, res) => {
+  try {
+    const ninmodify = await NinModification.find().sort({ createdAt: -1 });
+    res.status(200).json(ninmodify);
+  } catch (err) {
+    console.error('Error fetching transactions:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+const getAllBvnLicence = async (req, res) => {
+  try {
+    const bankLicence = await BvnLicenseSubmission.find().sort({ createdAt: -1 });
+    res.status(200).json(bankLicence);
+  } catch (err) {
+    console.error('Error fetching transactions:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
 
 const updateUser = async (req, res) => {
   try {
@@ -72,5 +127,10 @@ module.exports = {
   getAllUsers,
   getAllTransactions,
   updateUser,
-  deleteUser
+  deleteUser,
+  getAllBankAgency,
+  getAllBvnLicence,
+  getAllCacReg,
+  getAllEnrollment,
+  getAllNinModifications
 };
