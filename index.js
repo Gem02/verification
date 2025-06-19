@@ -4,7 +4,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const { secureHeaders,limiter,hpp} = require('./middleware/security');
-// const {sendVerificationEmail} = require('./utilities/emailTemplate')
+ const {sendVerificationEmail} = require('./utilities/emailTemplate')
 
 const authRoutes = require('./route/authRoutes');
 const virtualAccount = require('./route/accountRoute');
