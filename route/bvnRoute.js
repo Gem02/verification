@@ -1,3 +1,5 @@
+// this file is in the route/bvnRoute
+
 const express = require('express');
 const router = express.Router();
 const { submitBvnData } = require('../controller/bvnRegController');

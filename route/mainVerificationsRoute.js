@@ -1,3 +1,4 @@
+// this file is in the route/mainRoute
 const express = require('express');
 const router = express.Router();
 const {verifyNin} = require('../controller/ninController');

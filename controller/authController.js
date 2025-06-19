@@ -1,3 +1,5 @@
+// this file is in the controller/authController
+
 const UserModel = require('../models/User');
 const { generateAccessToken, generateRefreshToken } = require('../utilities/generateToken');
 const bcryptjs = require('bcryptjs');

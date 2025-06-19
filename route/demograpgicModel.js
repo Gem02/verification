@@ -1,3 +1,4 @@
+// this file is in the route/demographicRoute
 const express = require('express');
 const router = express.Router();
 const { demographic } = require('../controller/demoController');

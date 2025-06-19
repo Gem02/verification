@@ -1,3 +1,5 @@
+// this file is in the controller/adminController
+
 const UserModel = require('../models/User');
 const TransactionModel = require('../models/transactions');
 const BvnLicenseSubmission = require('../models/BvnLicenseModel');

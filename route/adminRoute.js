@@ -1,3 +1,5 @@
+// this file is in the route/adminRoute
+
 const express = require('express');
 const router = express.Router();
 const { getAllUsers, getAllTransactions, updateUser, deleteUser, getAllBankAgency,

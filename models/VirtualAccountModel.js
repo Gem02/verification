@@ -1,3 +1,5 @@
+// this file is in the models/VirtualAccountModel
+
 const mongoose = require('mongoose');
 
 const virtualAccountSchema = new mongoose.Schema({
