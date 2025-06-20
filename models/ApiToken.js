@@ -7,11 +7,6 @@ const apiTokenSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  tokenName: {
-    type: String,
-    required: true,
-    trim: true,
-  },
   apiKey: {
     type: String,
     required: true,
