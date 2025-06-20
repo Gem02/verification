@@ -8,12 +8,6 @@ const generateApiToken = async (req, res) => {
   try {
     const {userId } = req.body;
 
-    if (!tokenName) {
-      return res.status(400).json({
-        message: "Token name and permissions are required",
-      })
-    }
-
     const apiToken = new ApiToken({
       user: userId
     })
