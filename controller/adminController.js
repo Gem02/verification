@@ -1,19 +1,35 @@
 // this file is in the controller/adminController
 
-const UserModel = require('../models/User');
+
 const TransactionModel = require('../models/transactions');
 const BvnLicenseSubmission = require('../models/BvnLicenseModel');
 const BvnSubmission = require('../models/BvnSubmissionModel');
 const CacRegistration = require('../models/cacRegistrationModel');
 const Enrollment = require("../models/EnrollmentModel");
 const NinModification = require('../models/NinModificationModel'); 
+const UserModel = require('../models/User');
+const VirtualAccount = require('../models/VirtualAccountModel');
 
 const getAllUsers = async (req, res) => {
   try {
-    const users = await UserModel.find().select('-password'); 
-    res.json(users);
+    const users = await UserModel.find().select('-password');
+
+    const virtualAccounts = await VirtualAccount.find();
+
+    const accountMap = {};
+    virtualAccounts.forEach((acc) => {
+      accountMap[acc.userId.toString()] = acc.accountNumber;
+    });
+
+
+    const usersWithAccounts = users.map(user => ({
+      ...user.toObject(),
+      accountNumber: accountMap[user._id.toString()] || null
+    }));
+
+    res.json(usersWithAccounts);
   } catch (err) {
-    console.error('Error fetching users:', err);
+    console.error('Error fetching users with accounts:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
