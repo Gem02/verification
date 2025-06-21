@@ -44,6 +44,37 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+const addAccountBalance = async (req, res) => {
+  try {
+    const { phone, userId, amount } = req.body;
+
+    
+    if (!phone || !userId || !amount) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    const account = await VirtualAccount.findOne({ user: userId });
+
+    if (!account) {
+      return res.status(404).json({ message: 'Virtual account not found for this user' });
+    }
+
+    // if (account.customerPhone && account.customerPhone !== phone) {
+    //   return res.status(403).json({ message: 'Phone number mismatch' });
+    // }
+
+    account.balance += Number(amount);
+    await account.save();
+
+    return res.status(200).json({
+      message: 'Balance updated successfully',
+      newBalance: account.balance,
+    });
+  } catch (error) {
+    console.error('Error adding account balance:', error);
+    return res.status(500).json({ message: 'Server error updating balance' });
+  }
+};
 
 const getAllTransactions = async (req, res) => {
   try {
@@ -161,5 +192,6 @@ module.exports = {
   getAllBvnLicence,
   getAllCacReg,
   getAllEnrollment,
-  getAllNinModifications
+  getAllNinModifications,
+  addAccountBalance,
 };
