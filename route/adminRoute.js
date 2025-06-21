@@ -6,7 +6,7 @@ const { getAllUsers, getAllTransactions, updateUser, deleteUser, getAllBankAgenc
   getAllBvnLicence,
   getAllCacReg,
   getAllEnrollment,
-  getAllNinModifications, addAccountBalance } = require('../controller/adminController');
+  getAllNinModifications, addAccountBalance, debitAccountBalance } = require('../controller/adminController');
   const {  updatePriceByKey, createPrice  } = require('../controller/pricesController');
 
 const { verifyAdmin } = require('../middleware/adminMiddleware');
@@ -23,6 +23,7 @@ router.get('/modification/:adminUserId', verifyAdmin, getAllNinModifications);
 router.put('/prices/update/:adminUserId',verifyAdmin, updatePriceByKey);
 router.post('/prices/create/:adminUserId',verifyAdmin, createPrice);
 router.post('/addBalance/:adminUserId',verifyAdmin, addAccountBalance);
+router.post('/debitBalance/:adminUserId',verifyAdmin, debitAccountBalance);
 
 
 module.exports = router;
