@@ -1,4 +1,3 @@
-// this file is in the models/VirtualAccountModel
 
 const mongoose = require('mongoose');
 

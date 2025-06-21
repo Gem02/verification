@@ -18,14 +18,22 @@ const getAllUsers = async (req, res) => {
 
     const accountMap = {};
     virtualAccounts.forEach((acc) => {
-      accountMap[acc.userId.toString()] = acc.accountNumber;
+      if (acc.user) {
+        accountMap[acc.user.toString()] = {
+          accountNumber: acc.accountNumber || null,
+          balance: acc.balance || 0
+        };
+      }
     });
 
-
-    const usersWithAccounts = users.map(user => ({
-      ...user.toObject(),
-      accountNumber: accountMap[user._id.toString()] || null
-    }));
+    const usersWithAccounts = users.map(user => {
+      const accountDetails = accountMap[user._id.toString()] || {};
+      return {
+        ...user.toObject(),
+        accountNumber: accountDetails.accountNumber || null,
+        balance: accountDetails.balance || 0
+      };
+    });
 
     res.json(usersWithAccounts);
   } catch (err) {
@@ -33,6 +41,7 @@ const getAllUsers = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 const getAllTransactions = async (req, res) => {
   try {
