@@ -20,6 +20,7 @@ const getAllUsers = async (req, res) => {
     virtualAccounts.forEach((acc) => {
       if (acc.user) {
         accountMap[acc.user.toString()] = {
+          accountName: acc.accountName || null,
           accountNumber: acc.accountNumber || null,
           balance: acc.balance || 0
         };
@@ -30,6 +31,7 @@ const getAllUsers = async (req, res) => {
       const accountDetails = accountMap[user._id.toString()] || {};
       return {
         ...user.toObject(),
+        accountName: accountDetails.accountName || null,
         accountNumber: accountDetails.accountNumber || null,
         balance: accountDetails.balance || 0
       };
