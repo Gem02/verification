@@ -47,9 +47,12 @@ const verifyIPE = async (req, res) => {
     if (!result || typeof result !== 'object') {
       return res.status(400).json({ message: 'Server Error. Funds refunded.' });
     }
-    userAcc.balance -= amount;
-    await userAcc.save();
 
+    if( result.response_code == '00'){
+        userAcc.balance -= amount;
+        await userAcc.save();
+    }
+  
     await saveDataHistory({
       data: result,
       dataFor: 'IPE-Slip',
