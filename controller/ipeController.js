@@ -34,7 +34,7 @@ const verifyIPE = async (req, res) => {
       trackingID: cleanTrackingId
     };
 
-    const response = await axios.post(`${apiUrl}/ipe_status.php`, payload, {
+    const response = await axios.post(`$https://dataverify.com.ng/api/developers/ipe`, payload, {
       headers: {
         'Content-Type': 'application/json'
       }
