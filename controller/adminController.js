@@ -199,6 +199,74 @@ const updateUser = async (req, res) => {
   }
 };
 
+const upgradeUser = async (req, res) => {
+  const { userId } = req.body;
+
+  // ✅ Validate input
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: 'Valid userId is required.' });
+  }
+
+  try {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    if (user.role === 'admin') {
+      return res.status(400).json({ message: 'User is already an admin.' });
+    }
+
+    user.role = 'admin';
+    await user.save();
+
+    const { password, ...userData } = user.toObject();
+
+    return res.status(200).json({
+      message: 'User upgraded to admin successfully.',
+      user: userData,
+    });
+
+  } catch (error) {
+    console.error('Upgrade User Error:', error);
+    return res.status(500).json({ message: 'Server error while upgrading user.' });
+  }
+};
+
+const downgradeUser = async (req, res) => {
+  const { userId } = req.body;
+
+  // ✅ Validate input
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: 'Valid userId is required.' });
+  }
+
+  try {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    if (user.role === 'user') {
+      return res.status(400).json({ message: 'User is already at the lowest role.' });
+    }
+
+    user.role = 'user';
+    await user.save();
+
+    const { password, ...userData } = user.toObject();
+
+    return res.status(200).json({
+      message: 'User downgraded to user successfully.',
+      user: userData,
+    });
+
+  } catch (error) {
+    console.error('Downgrade User Error:', error);
+    return res.status(500).json({ message: 'Server error while downgrading user.' });
+  }
+};
+
 
 const deleteUser = async (req, res) => {
   const { userId } = req.body;
@@ -226,5 +294,7 @@ module.exports = {
   getAllEnrollment,
   getAllNinModifications,
   addAccountBalance,
-  debitAccountBalance
+  debitAccountBalance,
+  upgradeUser,
+  downgradeUser
 };
