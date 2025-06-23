@@ -1,6 +1,6 @@
 // this file is in the controller/adminController
 
-
+const mongoose = require('mongoose');
 const TransactionModel = require('../models/transactions');
 const BvnLicenseSubmission = require('../models/BvnLicenseModel');
 const BvnSubmission = require('../models/BvnSubmissionModel');
