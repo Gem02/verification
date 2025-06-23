@@ -15,7 +15,7 @@ const verifyIPE = async (req, res) => {
   try {
     const cleanTrackingId = (trackingId || '').trim();
     if (!validator.isAlphanumeric(cleanTrackingId) || cleanTrackingId.length < 6) {
-    return res.status(400).json({ message: 'Invalid Tracking ID.' });
+      return res.status(400).json({ message: 'Invalid Tracking ID.' });
     }
 
     if (!amount || isNaN(amount) || amount <= 0) {
@@ -23,42 +23,47 @@ const verifyIPE = async (req, res) => {
     }
 
     const userAcc = await balanceCheck(userId, amount, pin);
-    console.log("Current balance:", userAcc.balance);
+    if (!userAcc) {
+      return res.status(403).json({ message: 'User balance or PIN invalid.' });
+    }
 
-    const apiUrl = process.env.DATA_VERIFY_URL;
     const apiKey = process.env.DATA_VERIFY_KEY;
+    const payload = { api_key: apiKey, trackingID: cleanTrackingId };
     const transactionReference = generateTransactionRef();
 
-    const payload = {
-      api_key: apiKey,
-      trackingID: cleanTrackingId
-    };
+    // Step 1: Submit tracking ID
+    const { data: initialRes } = await axios.post(
+      `https://dataverify.com.ng/api/developers/ipe`,
+      payload,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
 
-    const response = await axios.post(`https://dataverify.com.ng/api/developers/ipe`, payload, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-
-
-    const result = response.data;
-    console.log('the result is:', result);
-    if (!result || typeof result !== 'object') {
-      return res.status(400).json({ message: 'Server Error. Funds refunded.' });
+    if (!initialRes || initialRes.response !== '00') {
+      return res.status(400).json({ message: 'Error Submitting IPE.' });
     }
 
-    if( result.response_code == '00'){
-        userAcc.balance -= amount;
-        await userAcc.save();
+    // Step 2: Get Final Result
+    const { data: finalRes } = await axios.post(
+      `https://dataverify.com.ng/api/developers/ipe_status.php`,
+      payload,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    if (!finalRes || finalRes.response_code !== '00') {
+      return res.status(400).json({ message: 'IPE verification failed at final stage.' });
     }
-  
+
+    // ✅ Debit user
+    userAcc.balance -= amount;
+    await userAcc.save();
+
+    // 📝 Save data & transaction
     await saveDataHistory({
-      data: result,
+      data: finalRes,
       dataFor: 'IPE-Slip',
       userId,
     });
- 
+
     await saveTransaction({
       user: userId,
       accountNumber: userAcc.accountNumber,
@@ -66,21 +71,22 @@ const verifyIPE = async (req, res) => {
       transactionReference,
       TransactionType: 'IPE-Verification',
       type: 'debit',
-      description: `Verified IPE ${cleanTrackingId}`
+      description: `Verified IPE ${cleanTrackingId}`,
     });
 
-    console.log(result)
     return res.status(200).json({
       message: 'IPE verified successfully',
-      data: result,
-      balance: userAcc.balance
+      data: finalRes,
+      balance: userAcc.balance,
     });
 
   } catch (error) {
     console.error('IPE Verification Error:', error.response?.data || error.message);
-
-    return res.status(500).json({ message:  error.message || 'Server error during IPE verification'});
+    return res.status(500).json({
+      message: error.message || 'Server error during IPE verification',
+    });
   }
 };
+
 
 module.exports = { verifyIPE };
