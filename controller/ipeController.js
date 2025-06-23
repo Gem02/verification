@@ -39,6 +39,7 @@ const verifyIPE = async (req, res) => {
     );
 
     if (!initialRes || initialRes.response !== '00') {
+      console.error('IPE Verification Error stage 1:', initialRes);
       return res.status(400).json({ message: 'Error Submitting IPE.' });
     }
 
@@ -73,7 +74,7 @@ const verifyIPE = async (req, res) => {
       type: 'debit',
       description: `Verified IPE ${cleanTrackingId}`,
     });
-
+    console.error('IPE Verification Error:', finalRes);
     return res.status(200).json({
       message: 'IPE verified successfully',
       data: finalRes,
