@@ -13,9 +13,7 @@ const submitIPE = async (req, res) => {
   try {
     const cleanTrackingId = (trackingId || "").trim();
 
-    if (!validator.isAlphanumeric(cleanTrackingId) || cleanTrackingId.length < 6) {
-      return res.status(400).json({ message: "Invalid Tracking ID." });
-    }
+   
 
     if (!amount || isNaN(amount) || amount <= 0) {
       return res.status(400).json({ message: "Invalid amount." });
@@ -31,13 +29,16 @@ const submitIPE = async (req, res) => {
       trackingID: cleanTrackingId,
     };
 
-    const { data: result } = await axios.post(
+    console.log('the payload to use now is', payload);
+    const response = await axios.post(
       "https://dataverify.com.ng/api/developers/ipe",
       payload,
       { headers: { "Content-Type": "application/json" } }
     );
 
+    const result = response.data;
     if (!result || result.response !== "00") {
+      console.error('error the response code is', result.response);
       return res.status(400).json({ message: "Error submitting IPE tracking ID.", details: result });
     }
 
@@ -56,6 +57,7 @@ const submitIPE = async (req, res) => {
       type: "debit",
       description: `Submitted IPE tracking ID ${cleanTrackingId}`,
     });
+    console.log('transaction saved');
 
     return res.status(200).json({
       message: "IPE tracking submitted successfully",
@@ -93,13 +95,18 @@ const checkIPEStatus = async (req, res) => {
       trackingID: cleanTrackingId,
     };
 
-    const { data: finalRes } = await axios.post(
+    console.log('the payload to use now is', payload);
+
+    const res = await axios.post(
       "https://dataverify.com.ng/api/developers/ipe_status.php",
       payload,
       { headers: { "Content-Type": "application/json" } }
     );
 
+    const finalRes = res.data
+
     if (!finalRes || finalRes.response_code !== "00") {
+      console.error('the finalRes is ', finalRes.response_code);
       return res.status(400).json({ message: "Error checking IPE status.", details: finalRes });
     }
 
@@ -124,6 +131,7 @@ const checkIPEStatus = async (req, res) => {
       type: "debit",
       description: `Checked IPE status for ${cleanTrackingId}`,
     });
+    console.log('reansaction saved')
 
     return res.status(200).json({
       message: "IPE status checked successfully",
