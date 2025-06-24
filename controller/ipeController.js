@@ -1,69 +1,117 @@
-// this file is in the controller/ipeController
+require("dotenv").config();
+const axios = require("axios");
+const validator = require("validator");
+const { balanceCheck } = require("../utilities/compareBalance");
+const { saveTransaction, saveDataHistory } = require("../utilities/saveTransaction");
 
-require('dotenv').config();
-const axios = require('axios');
-const validator = require('validator');
-const { balanceCheck } = require('../utilities/compareBalance');
-const {saveTransaction, saveDataHistory} = require('../utilities/saveTransaction');
+const generateTransactionRef = () =>
+  "IPE-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
 
-const generateTransactionRef = () => 'IPE-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-
-const verifyIPE = async (req, res) => {
+const submitIPE = async (req, res) => {
   const { trackingId, userId, pin, amount } = req.body;
-  console.log("IPE Verification Request:", req.body);
 
   try {
-    const cleanTrackingId = (trackingId || '').trim();
+    const cleanTrackingId = (trackingId || "").trim();
+
     if (!validator.isAlphanumeric(cleanTrackingId) || cleanTrackingId.length < 6) {
-      return res.status(400).json({ message: 'Invalid Tracking ID.' });
+      return res.status(400).json({ message: "Invalid Tracking ID." });
     }
 
     if (!amount || isNaN(amount) || amount <= 0) {
-      return res.status(400).json({ message: 'Invalid amount.' });
+      return res.status(400).json({ message: "Invalid amount." });
     }
 
     const userAcc = await balanceCheck(userId, amount, pin);
     if (!userAcc) {
-      return res.status(403).json({ message: 'User balance or PIN invalid.' });
+      return res.status(403).json({ message: "Invalid balance or PIN." });
     }
 
-    const apiKey = process.env.DATA_VERIFY_KEY;
-    const payload = { api_key: apiKey, trackingID: cleanTrackingId };
-    const transactionReference = generateTransactionRef();
+    const payload = {
+      api_key: process.env.DATA_VERIFY_KEY,
+      trackingID: cleanTrackingId,
+    };
 
-    // Step 1: Submit tracking ID
-   /*  const { data: initialRes } = await axios.post(
-      `https://dataverify.com.ng/api/developers/ipe`,
+    const { data: result } = await axios.post(
+      "https://dataverify.com.ng/api/developers/ipe",
       payload,
-      { headers: { 'Content-Type': 'application/json' } }
+      { headers: { "Content-Type": "application/json" } }
     );
 
-    if (!initialRes || initialRes.response !== '00') {
-      console.error('IPE Verification Error stage 1:', initialRes);
-      return res.status(400).json({ message: 'Error Submitting IPE.' });
-    } */
-
-    // Step 2: Get Final Result
-    const response = await axios.post(
-      `https://dataverify.com.ng/api/developers/ipe_status.php`,
-      payload,
-      { headers: { 'Content-Type': 'application/json' } }
-    );
-
-    const finalRes = response.data;
-    if (!finalRes || finalRes.response_code !== '00') {
-      console.error('the error is', finalRes);
-      return res.status(400).json({ message: 'IPE verification failed at final stage.' });
+    if (!result || result.response !== "00") {
+      return res.status(400).json({ message: "Error submitting IPE tracking ID.", details: result });
     }
 
-    // ✅ Debit user
+    // 💰 Deduct and save
     userAcc.balance -= amount;
     await userAcc.save();
 
-    // 📝 Save data & transaction
+    const transactionReference = generateTransactionRef();
+
+    await saveTransaction({
+      user: userId,
+      accountNumber: userAcc.accountNumber,
+      amount,
+      transactionReference,
+      TransactionType: "IPE-Submit",
+      type: "debit",
+      description: `Submitted IPE tracking ID ${cleanTrackingId}`,
+    });
+
+    return res.status(200).json({
+      message: "IPE tracking submitted successfully",
+      data: result,
+      balance: userAcc.balance,
+    });
+
+  } catch (error) {
+    console.error("IPE Submit Error:", error.response?.data || error.message);
+    return res.status(500).json({ message: "Server error during IPE submission", error: error.message });
+  }
+};
+
+const checkIPEStatus = async (req, res) => {
+  const { trackingId, userId, pin, amount } = req.body;
+
+  try {
+    const cleanTrackingId = (trackingId || "").trim();
+
+    if (!validator.isAlphanumeric(cleanTrackingId) || cleanTrackingId.length < 6) {
+      return res.status(400).json({ message: "Invalid Tracking ID." });
+    }
+
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount." });
+    }
+
+    const userAcc = await balanceCheck(userId, amount, pin);
+    if (!userAcc) {
+      return res.status(403).json({ message: "Invalid balance or PIN." });
+    }
+
+    const payload = {
+      api_key: process.env.DATA_VERIFY_KEY,
+      trackingID: cleanTrackingId,
+    };
+
+    const { data: finalRes } = await axios.post(
+      "https://dataverify.com.ng/api/developers/ipe_status.php",
+      payload,
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    if (!finalRes || finalRes.response_code !== "00") {
+      return res.status(400).json({ message: "Error checking IPE status.", details: finalRes });
+    }
+
+    // 💰 Deduct and Save
+    userAcc.balance -= amount;
+    await userAcc.save();
+
+    const transactionReference = generateTransactionRef();
+
     await saveDataHistory({
       data: finalRes,
-      dataFor: 'IPE-Slip',
+      dataFor: "IPE-Slip",
       userId,
     });
 
@@ -72,24 +120,67 @@ const verifyIPE = async (req, res) => {
       accountNumber: userAcc.accountNumber,
       amount,
       transactionReference,
-      TransactionType: 'IPE-Verification',
-      type: 'debit',
-      description: `Verified IPE ${cleanTrackingId}`,
+      TransactionType: "IPE-Status",
+      type: "debit",
+      description: `Checked IPE status for ${cleanTrackingId}`,
     });
-    console.error('IPE Verification Error:', finalRes);
+
     return res.status(200).json({
-      message: 'IPE verified successfully',
+      message: "IPE status checked successfully",
       data: finalRes,
       balance: userAcc.balance,
     });
 
   } catch (error) {
-    console.error('IPE Verification Error:', error.response?.data || error.message);
-    return res.status(500).json({
-      message: error.message || 'Server error during IPE verification',
-    });
+    console.error("IPE Status Error:", error.response?.data || error.message);
+    return res.status(500).json({ message: "Server error during IPE status check", error: error.message });
   }
 };
 
+const freeStatus = async (req, res) => {
+  const { trackingId } = req.body;
 
-module.exports = { verifyIPE };
+  try {
+    const cleanTrackingId = (trackingId || "").trim();
+
+    if (!validator.isAlphanumeric(cleanTrackingId) || cleanTrackingId.length < 6) {
+      return res.status(400).json({ message: "Invalid Tracking ID." });
+    }
+
+    const payload = {
+      api_key: process.env.DATA_VERIFY_KEY,
+      trackingID: cleanTrackingId,
+    };
+
+    const { data: finalRes } = await axios.post(
+      "https://dataverify.com.ng/api/developers/ipe_status.php",
+      payload,
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    if (!finalRes || finalRes.response_code !== "00") {
+      return res.status(400).json({ message: "Error checking IPE status.", details: finalRes });
+    }
+    await saveDataHistory({
+      data: finalRes,
+      dataFor: "IPE-Slip",
+      userId,
+    });
+
+    return res.status(200).json({
+      message: "IPE status checked successfully",
+      data: finalRes,
+      balance: userAcc.balance,
+    });
+
+  } catch (error) {
+    console.error("IPE Status Error:", error.response?.data || error.message);
+    return res.status(500).json({ message: "Server error during IPE status check", error: error.message });
+  }
+}
+
+module.exports = {
+  submitIPE,
+  checkIPEStatus,
+  freeStatus
+};

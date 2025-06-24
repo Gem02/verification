@@ -1,253 +1,95 @@
-// utils/encryption.js
-const crypto = require('crypto');
+// this file is in the controller/ipeController
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY.slice(0, 32); // Must be 32 bytes
-const IV_LENGTH = 16;
+require('dotenv').config();
+const axios = require('axios');
+const validator = require('validator');
+const { balanceCheck } = require('../utilities/compareBalance');
+const {saveTransaction, saveDataHistory} = require('../utilities/saveTransaction');
 
-function encrypt(text) {
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  return iv.toString('hex') + ':' + encrypted;
-}
+const generateTransactionRef = () => 'IPE-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
 
-function decrypt(text) {
-  const [ivHex, encryptedData] = text.split(':');
-  const iv = Buffer.from(ivHex, 'hex');
-  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
-  let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
-}
+const verifyIPE = async (req, res) => {
+  const { trackingId, userId, pin, amount } = req.body;
+  console.log("IPE Verification Request:", req.body);
 
-module.exports = { encrypt, decrypt };
+  try {
+    const cleanTrackingId = (trackingId || '').trim();
+    if (!validator.isAlphanumeric(cleanTrackingId) || cleanTrackingId.length < 6) {
+      return res.status(400).json({ message: 'Invalid Tracking ID.' });
+    }
 
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ message: 'Invalid amount.' });
+    }
 
-// models/User.js
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const { encrypt, decrypt } = require('../utils/encryption');
+    const userAcc = await balanceCheck(userId, amount, pin);
+    if (!userAcc) {
+      return res.status(403).json({ message: 'User balance or PIN invalid.' });
+    }
 
-const userSchema = new mongoose.Schema({
-  fullName: { type: String, required: true },
-  dateOfBirth: { type: Date, required: true },
-  gender: { type: String, enum: ['male', 'female', 'other'], required: true },
-  phone: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  address: { type: String },
-  nationality: { type: String },
-  stateOfOrigin: { type: String },
-  lga: { type: String },
-  profilePhoto: { type: String }, // Store the URL or path to the uploaded photo
-  nextOfKin: {
-    name: { type: String },
-    phone: { type: String },
-    relationship: { type: String }
-  },
-  bankDetails: {
-    bankName: { type: String },
-    accountNumber: { type: String, set: encrypt, get: decrypt },
-    accountName: { type: String }
-  },
-  nin: { type: String, set: encrypt, get: decrypt },
-  bvn: { type: String, set: encrypt, get: decrypt },
-  role: { type: String, enum: ['user', 'admin', 'superadmin'], default: 'user' },
-  isVerified: { type: Boolean, default: false },
-}, {
-  timestamps: true,
-  toJSON: { getters: true },
-  toObject: { getters: true }
-});
+    const apiKey = process.env.DATA_VERIFY_KEY;
+    const payload = { api_key: apiKey, trackingID: cleanTrackingId };
+    const transactionReference = generateTransactionRef();
 
-userSchema.pre('save', async function (next) {
-  if (this.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 10);
+    // Step 1: Submit tracking ID
+     const { data: initialRes } = await axios.post(
+      `https://dataverify.com.ng/api/developers/ipe`,
+      payload,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    if (!initialRes || initialRes.response !== '00') {
+      console.error('IPE Verification Error stage 1:', initialRes);
+      return res.status(400).json({ message: 'Error Submitting IPE.' });
+    } 
+
+    // Step 2: Get Final Result
+    const response = await axios.post(
+      `https://dataverify.com.ng/api/developers/ipe_status.php`,
+      payload,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    const finalRes = response.data;
+    if (!finalRes || finalRes.response_code !== '00') {
+      console.error('the error is', finalRes);
+      return res.status(400).json({ message: 'IPE verification failed at final stage.' });
+    }
+
+    // ✅ Debit user
+    userAcc.balance -= amount;
+    await userAcc.save();
+
+    // 📝 Save data & transaction
+    await saveDataHistory({
+      data: finalRes,
+      dataFor: 'IPE-Slip',
+      userId,
+    });
+
+    await saveTransaction({
+      user: userId,
+      accountNumber: userAcc.accountNumber,
+      amount,
+      transactionReference,
+      TransactionType: 'IPE-Verification',
+      type: 'debit',
+      description: `Verified IPE ${cleanTrackingId}`,
+    });
+    console.error('IPE Verification Error:', finalRes);
+    return res.status(200).json({
+      message: 'IPE verified successfully',
+      data: finalRes,
+      balance: userAcc.balance,
+    });
+
+  } catch (error) {
+    console.error('IPE Verification Error:', error.response?.data || error.message);
+    return res.status(500).json({
+      message: error.message || 'Server error during IPE verification',
+    });
   }
-  next();
-});
-
-userSchema.methods.comparePassword = function (password) {
-  return bcrypt.compare(password, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// utils/encryption.js
-const crypto = require('crypto');
-
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY.slice(0, 32); // Must be 32 bytes
-const IV_LENGTH = 16;
-
-function encrypt(text) {
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  return iv.toString('hex') + ':' + encrypted;
-}
-
-function decrypt(text) {
-  const [ivHex, encryptedData] = text.split(':');
-  const iv = Buffer.from(ivHex, 'hex');
-  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
-  let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
-}
-
-module.exports = { encrypt, decrypt };
-
-
-// models/User.js
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const { encrypt, decrypt } = require('../utils/encryption');
-
-const userSchema = new mongoose.Schema({
-  fullName: { type: String, required: true },
-  dateOfBirth: { type: Date, required: true },
-  gender: { type: String, enum: ['male', 'female', 'other'], required: true },
-  phone: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  address: { type: String },
-  nationality: { type: String },
-  stateOfOrigin: { type: String },
-  lga: { type: String },
-  profilePhoto: { type: String },
-  nextOfKin: {
-    name: { type: String },
-    phone: { type: String },
-    relationship: { type: String }
-  },
-  bankDetails: {
-    bankName: { type: String },
-    accountNumber: { type: String, set: encrypt, get: decrypt },
-    accountName: { type: String }
-  },
-  nin: { type: String, set: encrypt, get: decrypt },
-  bvn: { type: String, set: encrypt, get: decrypt },
-  role: { type: String, enum: ['user', 'admin', 'superadmin'], default: 'user' },
-  isVerified: { type: Boolean, default: false },
-}, {
-  timestamps: true,
-  toJSON: { getters: true },
-  toObject: { getters: true }
-});
-
-userSchema.pre('save', async function (next) {
-  if (this.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 10);
-  }
-  next();
-});
-
-userSchema.methods.comparePassword = function (password) {
-  return bcrypt.compare(password, this.password);
-};
-
-module.exports = mongoose.model('User', userSchema);
-
-
-// models/Wallet.js
-const walletSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-  balance: { type: Number, default: 0 },
-  currency: { type: String, default: 'NGN' }
-}, { timestamps: true });
-
-module.exports = mongoose.model('Wallet', walletSchema);
-
-
-// models/Referral.js
-const referralSchema = new mongoose.Schema({
-  referrerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  referredUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  rewardEarned: { type: Number, default: 0 },
-  referredAt: { type: Date, default: Date.now }
-});
-
-module.exports = mongoose.model('Referral', referralSchema);
-
-
-// models/Loan.js
-const loanSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  amount: { type: Number, required: true },
-  status: { type: String, enum: ['pending', 'approved', 'declined'], default: 'pending' },
-  repaymentType: { type: String, enum: ['flexible', 'monthly'], required: true },
-  requestedAt: { type: Date, default: Date.now },
-  approvedAt: { type: Date },
-  dueDate: { type: Date },
-  guarantor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-}, { timestamps: true });
-
-module.exports = mongoose.model('Loan', loanSchema);
-
-
-// models/SavingsPlan.js
-const savingsSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  principal: { type: Number, required: true },
-  interestRate: { type: Number, default: 3.5 },
-  startDate: { type: Date, default: Date.now },
-  lockInPeriodMonths: { type: Number, default: 12 },
-  nextInterestWithdrawal: { type: Date },
-  isActive: { type: Boolean, default: true }
-}, { timestamps: true });
-
-module.exports = mongoose.model('SavingsPlan', savingsSchema);
-
-
-// models/InvestmentPlan.js
-const investmentSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  amount: { type: Number, required: true },
-  interestRate: { type: Number },
-  dividendEligible: { type: Boolean, default: true },
-  startedAt: { type: Date, default: Date.now },
-  lockedUntil: { type: Date },
-  withdrawals: [{
-    atMonth: { type: Number },
-    allowed: { type: Boolean, default: false },
-    withdrawn: { type: Boolean, default: false },
-    dateWithdrawn: { type: Date }
-  }]
-}, { timestamps: true });
-
-module.exports = mongoose.model('InvestmentPlan', investmentSchema);
-
-
-// models/TransactionHistory.js
-const transactionHistorySchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  type: { type: String, enum: ['deposit', 'withdrawal', 'loan', 'investment', 'referral'], required: true },
-  amount: { type: Number, required: true },
-  status: { type: String, enum: ['pending', 'successful', 'failed'], default: 'pending' },
-  reference: { type: String },
-  meta: { type: Object },
-  createdAt: { type: Date, default: Date.now }
-});
-
-module.exports = mongoose.model('TransactionHistory', transactionHistorySchema);
+module.exports = { verifyIPE };
