@@ -32,7 +32,7 @@ const verifyIPE = async (req, res) => {
     const transactionReference = generateTransactionRef();
 
     // Step 1: Submit tracking ID
-    const { data: initialRes } = await axios.post(
+   /*  const { data: initialRes } = await axios.post(
       `https://dataverify.com.ng/api/developers/ipe`,
       payload,
       { headers: { 'Content-Type': 'application/json' } }
@@ -41,16 +41,18 @@ const verifyIPE = async (req, res) => {
     if (!initialRes || initialRes.response !== '00') {
       console.error('IPE Verification Error stage 1:', initialRes);
       return res.status(400).json({ message: 'Error Submitting IPE.' });
-    }
+    } */
 
     // Step 2: Get Final Result
-    const { data: finalRes } = await axios.post(
+    const response = await axios.post(
       `https://dataverify.com.ng/api/developers/ipe_status.php`,
       payload,
       { headers: { 'Content-Type': 'application/json' } }
     );
 
+    const finalRes = response.data;
     if (!finalRes || finalRes.response_code !== '00') {
+      console.error('the error is', finalRes);
       return res.status(400).json({ message: 'IPE verification failed at final stage.' });
     }
 
