@@ -146,7 +146,7 @@ const checkIPEStatus = async (req, res) => {
 };
 
 const freeStatus = async (req, res) => {
-  const { trackingId } = req.body;
+  const { trackingId, userId } = req.body;
 
   try {
     const cleanTrackingId = (trackingId || "").trim();
