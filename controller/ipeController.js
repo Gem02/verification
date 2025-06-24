@@ -178,7 +178,6 @@ const freeStatus = async (req, res) => {
     return res.status(200).json({
       message: "IPE status checked successfully",
       data: finalRes,
-      balance: userAcc.balance,
     });
 
   } catch (error) {
