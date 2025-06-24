@@ -37,8 +37,8 @@ const submitIPE = async (req, res) => {
     );
 
     const result = response.data;
-    if (!result || result.response !== "00") {
-      console.error('error the response code is', result.response);
+    if (!result || result.response_code !== "00") {
+      console.error('error the response code is', result.response_code);
       return res.status(400).json({ message: "Error submitting IPE tracking ID.", details: result });
     }
 
