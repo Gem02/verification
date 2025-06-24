@@ -97,13 +97,13 @@ const checkIPEStatus = async (req, res) => {
 
     console.log('the payload to use now is', payload);
 
-    const res = await axios.post(
+    const response = await axios.post(
       "https://dataverify.com.ng/api/developers/ipe_status.php",
       payload,
       { headers: { "Content-Type": "application/json" } }
     );
 
-    const finalRes = res.data
+    const finalRes = response.data
 
     if (!finalRes || finalRes.response_code !== "00") {
       console.error('the finalRes is ', finalRes.response_code);
@@ -182,7 +182,7 @@ const freeStatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("IPE Status Error:", error.response?.data || error.message);
+    console.error("IPE Status Error:", error);
     return res.status(500).json({ message: "Server error during IPE status check", error: error.message });
   }
 }
