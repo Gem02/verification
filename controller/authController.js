@@ -111,12 +111,6 @@ const registerUser = async (req, res) => {
         return res.status(400).json({ message: 'NIN already exists' });
     }
 
-    try {
-      const res = await checkNIN(nin);
-      console.log(res)
-    } catch (ninError) {
-      return res.status(400).json({ message: 'Invalid NIN. Verification failed.' });
-    }
 
     console.log('finally')
 
