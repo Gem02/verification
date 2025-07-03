@@ -2,51 +2,43 @@ const Pricing = require("../models/PricingModel");
 const VirtualAccount = require("../models/VirtualAccountModel");
 const { saveTransaction } = require("./saveTransaction");
 
-//  Get pricing for a service
 const getServicePricing = async (serviceName) => {
   try {
-    const pricing = await Pricing.findOne({ serviceName, isActive: true });
+    const pricing = await Pricing.findOne({ service: serviceName });
 
-    if (!pricing || !pricing.pricing) {
+    if (!pricing || !pricing.prices || typeof pricing.prices.api !== "number") {
       throw new Error(`Pricing not found or incomplete for service: ${serviceName}`);
     }
 
     return pricing;
   } catch (error) {
+    console.error("Error in getServicePricing:", error.message);
     throw new Error("Error fetching pricing: " + error.message);
   }
 };
 
-//  Calculate billing and attach it to request object
 const calculateBilling = async (serviceName, req) => {
   try {
     const pricing = await getServicePricing(serviceName);
 
-    const { costPrice, sellingPrice, currency } = pricing.pricing;
+    const sellingPrice = pricing.prices.api;
 
-    if (
-      typeof costPrice !== "number" ||
-      typeof sellingPrice !== "number" ||
-      costPrice < 0 ||
-      sellingPrice <= 0
-    ) {
-      throw new Error(`Invalid pricing values for service: ${serviceName}`);
+    if (typeof sellingPrice !== "number" || sellingPrice <= 0) {
+      throw new Error(`Invalid API pricing for service: ${serviceName}`);
     }
 
     req.billing = {
-      costPrice,
       sellingPrice,
-      profit: sellingPrice - costPrice,
-      currency: currency || "NGN",
+      currency: "NGN",
     };
 
     return req.billing;
   } catch (error) {
+    console.error("Error in calculateBilling:", error.message);
     throw new Error("Billing error: " + error.message);
   }
 };
 
-//  Check if user's virtual account has enough funds
 const checkAPIBalance = async (userId, amount) => {
   try {
     const account = await VirtualAccount.findOne({ user: userId });
@@ -61,11 +53,11 @@ const checkAPIBalance = async (userId, amount) => {
 
     return account;
   } catch (error) {
+    console.error("Error in checkAPIBalance:", error.message);
     throw new Error("Balance check error: " + error.message);
   }
 };
 
-//  Deduct balance and log the transaction
 const deductAPIBalance = async (userId, amount, description) => {
   try {
     const account = await VirtualAccount.findOne({ user: userId });
@@ -81,7 +73,6 @@ const deductAPIBalance = async (userId, amount, description) => {
     account.balance -= amount;
     await account.save();
 
-    // Save transaction
     await saveTransaction({
       user: userId,
       accountNumber: account.accountNumber,
@@ -94,6 +85,7 @@ const deductAPIBalance = async (userId, amount, description) => {
 
     return account.balance;
   } catch (error) {
+    console.error("Error in deductAPIBalance:", error.message);
     throw new Error("Deduction error: " + error.message);
   }
 };
