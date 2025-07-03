@@ -16,7 +16,7 @@ const verifyNinAPI = async (req, res) => {
   try {
     const { nin } = req.body;
 
-    // Step 1: Input validation
+    // Step 1: Validate input
     if (!nin) {
       return res.status(400).json({
         success: false,
@@ -37,7 +37,6 @@ const verifyNinAPI = async (req, res) => {
     }
 
     const cleanNIN = validator.escape(nin.toString().trim());
-
     if (!validator.isNumeric(cleanNIN) || cleanNIN.length !== 11) {
       return res.status(400).json({
         success: false,
@@ -59,29 +58,45 @@ const verifyNinAPI = async (req, res) => {
       });
     }
 
-    // Step 2: Billing & balance check
-    const billing = await calculateBilling("nin_verification", req);
-    userAccount = await checkAPIBalance(req.apiUser._id, billing.sellingPrice);
+    // Step 2: Calculate billing and check user balance
+    let billing = null;
+    try {
+      billing = await calculateBilling("nin_verification", req);
+    } catch (error) {
+      console.error("Billing error:", error.message);
+      throw new Error("Failed to calculate billing");
+    }
 
-    // Step 3: Call external provider (Prembly)
-    const base_url = process.env.PREMBLY_BASE_URL;
+    try {
+      userAccount = await checkAPIBalance(req.apiUser._id, billing.sellingPrice);
+    } catch (error) {
+      console.error("Balance check error:", error.message);
+      throw error;
+    }
 
-    const response = await axios.post(
-      `${base_url}/identitypass/verification/vnin`,
-      { number: cleanNIN },
-      {
-        headers: {
-          "x-api-key": process.env.PREMBLY_API_KEY,
-          "app-id": process.env.PREMBLY_APP_ID,
-          "Content-Type": "application/json",
-        },
-        timeout: 30000, // 30 seconds
-      }
-    );
+    // Step 3: Call the external API
+    let response;
+    try {
+      const base_url = process.env.PREMBLY_BASE_URL;
+      response = await axios.post(
+        `${base_url}/identitypass/verification/vnin`,
+        { number: cleanNIN },
+        {
+          headers: {
+            "x-api-key": process.env.PREMBLY_API_KEY,
+            "app-id": process.env.PREMBLY_APP_ID,
+            "Content-Type": "application/json",
+          },
+          timeout: 30000,
+        }
+      );
+    } catch (error) {
+      console.error("Prembly API call failed:", error.message, error.response?.data);
+      throw error;
+    }
 
     const result = response.data;
 
-    // Step 4: Check if verified
     if (!result?.status || result?.verification?.status !== "VERIFIED") {
       return res.status(422).json({
         success: false,
@@ -108,14 +123,20 @@ const verifyNinAPI = async (req, res) => {
       });
     }
 
-    // Step 5: Deduct billing amount from user
-    const newBalance = await deductAPIBalance(
-      req.apiUser._id,
-      billing.sellingPrice,
-      `API NIN Verification - ${cleanNIN}`
-    );
+    // Step 4: Deduct balance
+    let newBalance;
+    try {
+      newBalance = await deductAPIBalance(
+        req.apiUser._id,
+        billing.sellingPrice,
+        `API NIN Verification - ${cleanNIN}`
+      );
+    } catch (error) {
+      console.error("Deduction error:", error.message);
+      throw error;
+    }
 
-    // Step 6: Return success response
+    // Step 5: Return success
     return res.status(200).json({
       success: true,
       message: "NIN verification completed successfully",
@@ -126,7 +147,8 @@ const verifyNinAPI = async (req, res) => {
           first_name: result.verification.first_name || null,
           middle_name: result.verification.middle_name || null,
           last_name: result.verification.last_name || null,
-          full_name: `${result.verification.first_name || ""} ${result.verification.middle_name || ""} ${result.verification.last_name || ""}`.trim(),
+          full_name:
+            `${result.verification.first_name || ""} ${result.verification.middle_name || ""} ${result.verification.last_name || ""}`.trim(),
           date_of_birth: result.verification.date_of_birth || null,
           gender: result.verification.gender || null,
           phone_number: result.verification.phone || null,
@@ -169,92 +191,61 @@ const verifyNinAPI = async (req, res) => {
         timestamp: new Date().toISOString(),
         response_time: `${Date.now() - startTime}ms`,
         api_version: "v1.0.0",
-        rate_limit: {
-          remaining: req.rateLimit?.remaining || null,
-          reset_time: req.rateLimit?.resetTime || null,
-        },
       },
     });
   } catch (error) {
-    console.error("NIN API Error:", error);
-
-    // Timeout or network failure
+    // Handle known and unknown errors
     if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
       return res.status(504).json({
         success: false,
         message: "Request timeout",
         error: {
           code: "GATEWAY_TIMEOUT",
-          description: "The verification service is taking too long to respond. Please try again.",
-          retry_after: "30 seconds",
+          description: "The verification service is taking too long to respond.",
         },
         data: null,
-        meta: {
-          request_id: requestId,
-          timestamp: new Date().toISOString(),
-          response_time: `${Date.now() - startTime}ms`,
-          api_version: "v1.0.0",
-        },
+        meta: { request_id: requestId },
       });
     }
 
-    // Unauthorized from provider
     if (error.response?.status === 401) {
       return res.status(502).json({
         success: false,
         message: "Service authentication error",
         error: {
           code: "PROVIDER_AUTH_ERROR",
-          description: "There's an issue with our verification service provider. Our team has been notified.",
-          contact_support: "support@yourwebsite.com",
+          description: "Authentication with the provider failed.",
         },
         data: null,
-        meta: {
-          request_id: requestId,
-          timestamp: new Date().toISOString(),
-          response_time: `${Date.now() - startTime}ms`,
-          api_version: "v1.0.0",
-        },
+        meta: { request_id: requestId },
       });
     }
 
-    // Insufficient balance caught here
     if (error.message === "Insufficient balance") {
       return res.status(402).json({
         success: false,
         message: "Insufficient account balance",
         error: {
           code: "INSUFFICIENT_BALANCE",
-          description: "Your account balance is insufficient to complete this request",
+          description: "Your account balance is insufficient for this request",
           required_amount: req.billing?.sellingPrice || 0,
           current_balance: userAccount?.balance || 0,
         },
         data: null,
-        meta: {
-          request_id: requestId,
-          timestamp: new Date().toISOString(),
-          response_time: `${Date.now() - startTime}ms`,
-          api_version: "v1.0.0",
-        },
+        meta: { request_id: requestId },
       });
     }
 
-    // Generic internal error
     return res.status(500).json({
       success: false,
       message: "Internal server error",
       error: {
         code: "INTERNAL_SERVER_ERROR",
-        description: "An unexpected error occurred while processing your request. Please try again later.",
-        contact_support: "support@yourwebsite.com",
+        description: error.message || "Unexpected failure during request",
+        contact_support: "support@ayverify.com.ng",
       },
       data: null,
-      meta: {
-        request_id: requestId,
-        timestamp: new Date().toISOString(),
-        response_time: `${Date.now() - startTime}ms`,
-        api_version: "v1.0.0",
-      },
+      meta: { request_id: requestId },
     });
   }
 };
