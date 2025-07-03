@@ -33,7 +33,7 @@ router.use(createAPIRateLimit());
  * Helper to register routes
  */
 const applyRoute = (path, service, handler) => {
-  router.post(path, checkPermission(service), trackUsage(service), handler);
+  router.post(path,  trackUsage(service), handler);
 };
 
 //  Verification APIs
