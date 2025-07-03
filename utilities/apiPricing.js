@@ -4,12 +4,14 @@ const { saveTransaction } = require("./saveTransaction");
 
 const getServicePricing = async (serviceName) => {
   try {
-    const pricing = await Pricing.findOne({ service: serviceName });
+    const pricing = await Pricing.findOne({ key: serviceName });
 
     if (!pricing || !pricing.prices || typeof pricing.prices.api !== "number") {
       throw new Error(`Pricing not found or incomplete for service: ${serviceName}`);
     }
-
+    console.log(
+      'the price is', pricing
+    )
     return pricing;
   } catch (error) {
     console.error("Error in getServicePricing:", error.message);

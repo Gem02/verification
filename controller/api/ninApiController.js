@@ -61,7 +61,7 @@ const verifyNinAPI = async (req, res) => {
     // Step 2: Calculate billing and check user balance
     let billing = null;
     try {
-      billing = await calculateBilling("nin_verification", req);
+      billing = await calculateBilling("nin", req);
     } catch (error) {
       console.error("Billing error:", error.message);
       throw new Error("Failed to calculate billing");
