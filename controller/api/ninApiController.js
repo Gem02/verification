@@ -1,16 +1,22 @@
-require("dotenv").config()
-const axios = require("axios")
-const validator = require("validator")
-const { calculateBilling, checkAPIBalance, deductAPIBalance } = require("../../utilities/apiPricing")
+require("dotenv").config();
+const axios = require("axios");
+const validator = require("validator");
+const {
+  calculateBilling,
+  checkAPIBalance,
+  deductAPIBalance,
+} = require("../../utilities/apiPricing");
 
 const verifyNinAPI = async (req, res) => {
-  const startTime = Date.now()
-  const requestId = `nin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  const startTime = Date.now();
+  const requestId = `nin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  let userAccount = null;
 
   try {
-    const { nin } = req.body
+    const { nin } = req.body;
 
-    // Input validation
+    // Step 1: Input validation
     if (!nin) {
       return res.status(400).json({
         success: false,
@@ -27,10 +33,10 @@ const verifyNinAPI = async (req, res) => {
           response_time: `${Date.now() - startTime}ms`,
           api_version: "v1.0.0",
         },
-      })
+      });
     }
 
-    const cleanNIN = validator.escape(nin.toString().trim())
+    const cleanNIN = validator.escape(nin.toString().trim());
 
     if (!validator.isNumeric(cleanNIN) || cleanNIN.length !== 11) {
       return res.status(400).json({
@@ -50,15 +56,16 @@ const verifyNinAPI = async (req, res) => {
           response_time: `${Date.now() - startTime}ms`,
           api_version: "v1.0.0",
         },
-      })
+      });
     }
 
-    // Calculate pricing and check balance
-    const amount = await calculateBilling("nin_verification", req)
-    const userAccount = await checkAPIBalance(req.apiUser._id, amount)
+    // Step 2: Billing & balance check
+    const billing = await calculateBilling("nin_verification", req);
+    userAccount = await checkAPIBalance(req.apiUser._id, billing.sellingPrice);
 
-    // Call third-party API
-    const base_url = process.env.PREMBLY_BASE_URL
+    // Step 3: Call external provider (Prembly)
+    const base_url = process.env.PREMBLY_BASE_URL;
+
     const response = await axios.post(
       `${base_url}/identitypass/verification/vnin`,
       { number: cleanNIN },
@@ -68,14 +75,14 @@ const verifyNinAPI = async (req, res) => {
           "app-id": process.env.PREMBLY_APP_ID,
           "Content-Type": "application/json",
         },
-        timeout: 30000,
-      },
-    )
+        timeout: 30000, // 30 seconds
+      }
+    );
 
-    const result = response.data
+    const result = response.data;
 
-    // Check verification status
-    if (!result?.status || result.verification?.status !== "VERIFIED") {
+    // Step 4: Check if verified
+    if (!result?.status || result?.verification?.status !== "VERIFIED") {
       return res.status(422).json({
         success: false,
         message: "NIN verification failed",
@@ -83,7 +90,8 @@ const verifyNinAPI = async (req, res) => {
           code: "VERIFICATION_FAILED",
           field: "nin",
           description: "The provided NIN could not be verified with the national database",
-          provider_response: result?.message || "Unknown error from verification provider",
+          provider_response:
+            result?.message || result?.verification?.status || "Unknown error from provider",
         },
         data: {
           nin: cleanNIN,
@@ -97,13 +105,17 @@ const verifyNinAPI = async (req, res) => {
           api_version: "v1.0.0",
           provider: "Prembly Identity Pass",
         },
-      })
+      });
     }
 
-    // Deduct balance after successful verification
-    const newBalance = await deductAPIBalance(req.apiUser._id, amount, `API NIN Verification - ${cleanNIN}`)
+    // Step 5: Deduct billing amount from user
+    const newBalance = await deductAPIBalance(
+      req.apiUser._id,
+      billing.sellingPrice,
+      `API NIN Verification - ${cleanNIN}`
+    );
 
-    // Return comprehensive success response
+    // Step 6: Return success response
     return res.status(200).json({
       success: true,
       message: "NIN verification completed successfully",
@@ -114,8 +126,7 @@ const verifyNinAPI = async (req, res) => {
           first_name: result.verification.first_name || null,
           middle_name: result.verification.middle_name || null,
           last_name: result.verification.last_name || null,
-          full_name:
-            `${result.verification.first_name || ""} ${result.verification.middle_name || ""} ${result.verification.last_name || ""}`.trim(),
+          full_name: `${result.verification.first_name || ""} ${result.verification.middle_name || ""} ${result.verification.last_name || ""}`.trim(),
           date_of_birth: result.verification.date_of_birth || null,
           gender: result.verification.gender || null,
           phone_number: result.verification.phone || null,
@@ -147,8 +158,8 @@ const verifyNinAPI = async (req, res) => {
         },
       },
       billing: {
-        amount_charged: amount,
-        currency: "NGN",
+        amount_charged: billing.sellingPrice,
+        currency: billing.currency,
         remaining_balance: newBalance,
         transaction_reference: `TXN_${requestId}`,
         billing_cycle: "Pay-per-use",
@@ -158,17 +169,16 @@ const verifyNinAPI = async (req, res) => {
         timestamp: new Date().toISOString(),
         response_time: `${Date.now() - startTime}ms`,
         api_version: "v1.0.0",
-        provider: "Prembly Identity Pass",
         rate_limit: {
           remaining: req.rateLimit?.remaining || null,
           reset_time: req.rateLimit?.resetTime || null,
         },
       },
-    })
+    });
   } catch (error) {
-    console.error("NIN API Error:", error)
+    console.error("NIN API Error:", error);
 
-    // Handle different types of errors
+    // Timeout or network failure
     if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
       return res.status(504).json({
         success: false,
@@ -185,9 +195,10 @@ const verifyNinAPI = async (req, res) => {
           response_time: `${Date.now() - startTime}ms`,
           api_version: "v1.0.0",
         },
-      })
+      });
     }
 
+    // Unauthorized from provider
     if (error.response?.status === 401) {
       return res.status(502).json({
         success: false,
@@ -204,10 +215,10 @@ const verifyNinAPI = async (req, res) => {
           response_time: `${Date.now() - startTime}ms`,
           api_version: "v1.0.0",
         },
-      })
+      });
     }
 
-    let userAccount
+    // Insufficient balance caught here
     if (error.message === "Insufficient balance") {
       return res.status(402).json({
         success: false,
@@ -217,7 +228,6 @@ const verifyNinAPI = async (req, res) => {
           description: "Your account balance is insufficient to complete this request",
           required_amount: req.billing?.sellingPrice || 0,
           current_balance: userAccount?.balance || 0,
-          top_up_url: "https://yourwebsite.com/dashboard/wallet",
         },
         data: null,
         meta: {
@@ -226,17 +236,16 @@ const verifyNinAPI = async (req, res) => {
           response_time: `${Date.now() - startTime}ms`,
           api_version: "v1.0.0",
         },
-      })
+      });
     }
 
-    // Generic server error
+    // Generic internal error
     return res.status(500).json({
       success: false,
       message: "Internal server error",
       error: {
         code: "INTERNAL_SERVER_ERROR",
-        description:
-          "An unexpected error occurred while processing your request. Please try again or contact support if the issue persists.",
+        description: "An unexpected error occurred while processing your request. Please try again later.",
         contact_support: "support@yourwebsite.com",
       },
       data: null,
@@ -246,8 +255,8 @@ const verifyNinAPI = async (req, res) => {
         response_time: `${Date.now() - startTime}ms`,
         api_version: "v1.0.0",
       },
-    })
+    });
   }
-}
+};
 
-module.exports = { verifyNinAPI }
+module.exports = { verifyNinAPI };

@@ -26,6 +26,20 @@ const apiTokenSchema = new mongoose.Schema({
     requestsPerHour: { type: Number, default: 1000 },
     requestsPerDay: { type: Number, default: 10000 },
   },
+  permissions: {
+    type: [String],
+    enum: [
+      "nin_verification",
+      "bvn_verification",
+      "ipe_verification",
+      "airtime",
+      "data",
+      "demographic",
+      "personalization",
+    ],
+    default: [],
+  },
+
   usage: {
     totalRequests: { type: Number, default: 0 },
     successfulRequests: { type: Number, default: 0 },
