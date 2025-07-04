@@ -16,7 +16,6 @@ const checkStatusIPEAPI = async (req, res) => {
   try {
     const { tracking_id } = req.body;
 
-    // Input validation
     if (!tracking_id) {
       return res.status(400).json({
         success: false,
@@ -59,11 +58,9 @@ const checkStatusIPEAPI = async (req, res) => {
       });
     }
 
-    // Calculate billing and check balance
     const amount = await calculateBilling("ipe", req);
     const userAccount = await checkAPIBalance(req.apiUser._id, amount);
 
-    // Send request to provider
     const payload = {
       api_key: process.env.DATA_VERIFY_KEY,
       trackingID: cleanTrackingId,
@@ -84,7 +81,12 @@ const checkStatusIPEAPI = async (req, res) => {
     const result = response.data;
     console.log("IPE Verification Result:", result);
 
-    if (!result || result.status === "error" || !result.data) {
+    // Validate response
+    if (
+      !result ||
+      result.transactionStatus?.toLowerCase() !== "successful" ||
+      !result.reply
+    ) {
       return res.status(422).json({
         success: false,
         message: "IPE verification failed",
@@ -98,7 +100,7 @@ const checkStatusIPEAPI = async (req, res) => {
         data: {
           tracking_id: cleanTrackingId,
           verification_status: "FAILED",
-          provider_status: result?.status || "UNKNOWN",
+          provider_status: result?.transactionStatus || "UNKNOWN",
         },
         meta: {
           request_id: requestId,
@@ -110,7 +112,27 @@ const checkStatusIPEAPI = async (req, res) => {
       });
     }
 
-    const data = result.data;
+    // Merge top-level and reply data
+    const data = {
+      response_code: result.response_code || null,
+      description: result.description || null,
+      verificationType: result.verificationType || null,
+      verificationStatus: result.verificationStatus || null,
+      transactionStatus: result.transactionStatus || null,
+      transactionReference: result.transactionReference || null,
+      old_tracking_id: result.old_tracking_id || null,
+      newNIN: result.newNIN || null,
+      newTracking_id: result.newTracking_id || null,
+      message: result.message || null,
+      response: result.response || null,
+      reply: {
+        reply: result.reply?.reply || null,
+        nin: result.reply?.nin || null,
+        dob: result.reply?.dob || null,
+        name: result.reply?.name || null,
+        trackingNIN: result.reply?.trackingNIN || null,
+      },
+    };
 
     const newBalance = await deductAPIBalance(
       req.apiUser._id,
@@ -124,38 +146,26 @@ const checkStatusIPEAPI = async (req, res) => {
       data: {
         tracking_id: cleanTrackingId,
         verification_status: "VERIFIED",
-        raw_data: {
-          status: data.status || null,
-          application_type: data.application_type || null,
-          application_date: data.application_date || null,
-          processing_stage: data.processing_stage || null,
-          current_location: data.current_location || null,
-          estimated_completion: data.estimated_completion || null,
-          applicant_name: data.applicant_name || null,
-          reference_number: data.reference_number || null,
-          application_center: data.application_center || null,
-          document_type: data.document_type || null,
-          collection_status: data.collection_status || null,
-          collection_date: data.collection_date || null,
-          remarks: data.remarks || null,
-          progress_percentage: data.progress_percentage || null,
-          next_action: data.next_action || null,
-          last_updated: data.last_updated || null,
-        },
-        processing_summary: {
-          current_stage: data.processing_stage || null,
-          progress_percentage: data.progress_percentage || null,
-          next_action_required: data.next_action || null,
-          expected_completion_date: data.estimated_completion || null,
-          processing_center: data.current_location || null,
+        raw_data: data,
+        structured_summary: {
+          nin: data.reply.nin,
+          full_name: data.reply.name,
+          date_of_birth: data.reply.dob,
+          old_tracking_id: data.old_tracking_id,
+          new_tracking_id: data.newTracking_id,
+          reference_number: data.transactionReference,
+          verification_status: data.verificationStatus,
         },
         verification_details: {
           verified_at: new Date().toISOString(),
           verification_method: "IPE Tracking System",
           confidence_score:
-            data.status?.toLowerCase() === "completed" ? "HIGH" : "MEDIUM",
+            data.verificationStatus?.toLowerCase().includes("cleared") ||
+            data.transactionStatus?.toLowerCase() === "successful"
+              ? "HIGH"
+              : "MEDIUM",
           data_source: "Immigration and Population Enrollment (IPE) Database",
-          last_updated: data.last_updated || new Date().toISOString(),
+          last_updated: new Date().toISOString(),
         },
       },
       billing: {
