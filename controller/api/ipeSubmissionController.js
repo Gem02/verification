@@ -7,7 +7,7 @@ const {
   deductAPIBalance,
 } = require("../../utilities/apiPricing");
 
-const checkStatusIPEAPI = async (req, res) => {
+const submitIPEAPI = async (req, res) => {
   const startTime = Date.now();
   const requestId = `ipe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -258,4 +258,4 @@ const checkStatusIPEAPI = async (req, res) => {
   }
 };
 
-module.exports = { checkStatusIPEAPI };
+module.exports = { submitIPEAPI };
