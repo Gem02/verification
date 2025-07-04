@@ -3,7 +3,7 @@ const axios = require("axios")
 const validator = require("validator")
 const { calculateBilling, checkAPIBalance, deductAPIBalance } = require("../../utilities/apiPricing")
 
-const verifyIPEAPI = async (req, res) => {
+const checkStatusIPEAPI = async (req, res) => {
   const startTime = Date.now()
   const requestId = `ipe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
@@ -241,4 +241,4 @@ const verifyIPEAPI = async (req, res) => {
   }
 }
 
-module.exports = { verifyIPEAPI }
+module.exports = {checkStatusIPEAPI}
