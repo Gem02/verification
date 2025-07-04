@@ -127,8 +127,7 @@ const submitIPEAPI = async (req, res) => {
 
     if (
       !result ||
-      result.transactionStatus?.toLowerCase() !== "successful" ||
-      !result.reply
+      result.transactionStatus?.toLowerCase() !== "successful"
     ) {
       return res.status(422).json({
         success: false,
