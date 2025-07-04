@@ -60,7 +60,7 @@ const checkStatusIPEAPI = async (req, res) => {
     }
 
     // Calculate billing and check balance
-    const amount = await calculateBilling("ipe_verification", req);
+    const amount = await calculateBilling("ipe", req);
     const userAccount = await checkAPIBalance(req.apiUser._id, amount);
 
     // Send request to provider
