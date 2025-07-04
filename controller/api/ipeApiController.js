@@ -65,8 +65,8 @@ const checkStatusIPEAPI = async (req, res) => {
 
     // Send request to provider
     const payload = {
-      tracking_id: cleanTrackingId,
-      api_key: process.env.DATAVERIFY_API_KEY,
+      api_key: process.env.DATA_VERIFY_KEY,
+      trackingID: cleanTrackingId,
     };
 
     const response = await axios.post(
