@@ -70,7 +70,7 @@ const checkStatusIPEAPI = async (req, res) => {
     };
 
     const response = await axios.post(
-      "https://api.dataverify.ng/ipe_status.php",
+      "https://dataverify.com.ng/api/developers/ipe_status.php",
       payload,
       {
         headers: {
