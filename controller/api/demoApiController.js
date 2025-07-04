@@ -1,65 +1,57 @@
-require("dotenv").config()
-const axios = require("axios")
-const validator = require("validator")
-const { calculateBilling, checkAPIBalance, deductAPIBalance } = require("../../utilities/apiPricing")
+require("dotenv").config();
+const axios = require("axios");
+const validator = require("validator");
+const {
+  calculateBilling,
+  checkAPIBalance,
+  deductAPIBalance,
+} = require("../../utilities/apiPricing");
 
 const demographicAPI = async (req, res) => {
-  const startTime = Date.now()
-  const requestId = `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  const startTime = Date.now();
+  const requestId = `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  let userAccount = null;
 
   try {
-    const { first_name, last_name, date_of_birth, state_of_origin, lga } = req.body
+    const { first_name, last_name, date_of_birth, state_of_origin, lga } = req.body;
 
-    // Input validation
-    const validationErrors = []
+    const validationErrors = [];
 
-    if (!first_name) {
-      validationErrors.push({
-        field: "first_name",
-        message: "First name is required",
-        code: "MISSING_FIRST_NAME",
-      })
-    } else if (first_name.length < 2 || first_name.length > 50) {
+    if (!first_name || first_name.length < 2 || first_name.length > 50) {
       validationErrors.push({
         field: "first_name",
         message: "First name must be between 2 and 50 characters",
-        code: "INVALID_FIRST_NAME_LENGTH",
-      })
+        code: "INVALID_FIRST_NAME",
+      });
     }
 
-    if (!last_name) {
-      validationErrors.push({
-        field: "last_name",
-        message: "Last name is required",
-        code: "MISSING_LAST_NAME",
-      })
-    } else if (last_name.length < 2 || last_name.length > 50) {
+    if (!last_name || last_name.length < 2 || last_name.length > 50) {
       validationErrors.push({
         field: "last_name",
         message: "Last name must be between 2 and 50 characters",
-        code: "INVALID_LAST_NAME_LENGTH",
-      })
+        code: "INVALID_LAST_NAME",
+      });
     }
 
     if (date_of_birth) {
-      const dobRegex = /^\d{4}-\d{2}-\d{2}$/
+      const dobRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dobRegex.test(date_of_birth)) {
         validationErrors.push({
           field: "date_of_birth",
           message: "Date of birth must be in YYYY-MM-DD format",
           code: "INVALID_DATE_FORMAT",
-          expected_format: "YYYY-MM-DD",
-        })
+        });
       } else {
-        const dob = new Date(date_of_birth)
-        const today = new Date()
-        const age = today.getFullYear() - dob.getFullYear()
+        const dob = new Date(date_of_birth);
+        const today = new Date();
+        const age = today.getFullYear() - dob.getFullYear();
         if (age < 16 || age > 120) {
           validationErrors.push({
             field: "date_of_birth",
             message: "Age must be between 16 and 120 years",
             code: "INVALID_AGE_RANGE",
-          })
+          });
         }
       }
     }
@@ -69,7 +61,7 @@ const demographicAPI = async (req, res) => {
         field: "state_of_origin",
         message: "State of origin must not exceed 50 characters",
         code: "INVALID_STATE_LENGTH",
-      })
+      });
     }
 
     if (lga && lga.length > 50) {
@@ -77,7 +69,7 @@ const demographicAPI = async (req, res) => {
         field: "lga",
         message: "LGA must not exceed 50 characters",
         code: "INVALID_LGA_LENGTH",
-      })
+      });
     }
 
     if (validationErrors.length > 0) {
@@ -96,64 +88,56 @@ const demographicAPI = async (req, res) => {
           response_time: `${Date.now() - startTime}ms`,
           api_version: "v1.0.0",
         },
-      })
+      });
     }
 
-    // Sanitize inputs
-    const cleanFirstName = validator.escape(first_name.toString().trim())
-    const cleanLastName = validator.escape(last_name.toString().trim())
-    const cleanDOB = date_of_birth ? validator.escape(date_of_birth.toString().trim()) : null
-    const cleanState = state_of_origin ? validator.escape(state_of_origin.toString().trim()) : null
-    const cleanLGA = lga ? validator.escape(lga.toString().trim()) : null
+    const cleanData = {
+      first_name: validator.escape(first_name.trim()),
+      last_name: validator.escape(last_name.trim()),
+      date_of_birth: date_of_birth ? validator.escape(date_of_birth.trim()) : null,
+      state_of_origin: state_of_origin ? validator.escape(state_of_origin.trim()) : null,
+      lga: lga ? validator.escape(lga.trim()) : null,
+    };
 
-    // Calculate pricing and check balance
-    const amount = await calculateBilling("demographic", req)
-    const userAccount = await checkAPIBalance(req.apiUser._id, amount)
+    // Billing
+    const billing = await calculateBilling("demographic", req);
+    userAccount = await checkAPIBalance(req.apiUser._id, billing.sellingPrice);
 
-    // Prepare search payload
-    const searchPayload = {
-      first_name: cleanFirstName,
-      last_name: cleanLastName,
+    // Prepare payload
+    const payload = {
       api_key: process.env.DATAVERIFY_API_KEY,
-    }
+      first_name: cleanData.first_name,
+      last_name: cleanData.last_name,
+    };
 
-    // Add optional fields if provided
-    if (cleanDOB) searchPayload.date_of_birth = cleanDOB
-    if (cleanState) searchPayload.state_of_origin = cleanState
-    if (cleanLGA) searchPayload.lga = cleanLGA
+    if (cleanData.date_of_birth) payload.date_of_birth = cleanData.date_of_birth;
+    if (cleanData.state_of_origin) payload.state_of_origin = cleanData.state_of_origin;
+    if (cleanData.lga) payload.lga = cleanData.lga;
 
-    // Call third-party API
-    const response = await axios.post("https://api.dataverify.ng/nin_premium_demo", searchPayload, {
+    const response = await axios.post("https://api.dataverify.ng/nin_premium_demo", payload, {
       headers: {
         "Content-Type": "application/json",
-        "User-Agent": "YourWebsite-API/1.0",
+        "User-Agent": "AYVerify-API/1.0",
       },
       timeout: 45000,
-    })
+    });
 
-    const result = response.data
+    const result = response.data;
+    console.log("Demographic Search Result:", result);
 
-    // Check search results
     if (!result || result.status === "error" || !result.data || result.data.length === 0) {
       return res.status(422).json({
         success: false,
         message: "No demographic records found",
         error: {
           code: "NO_RECORDS_FOUND",
-          description: "No records match the provided demographic information",
-          provider_response: result?.message || "No matching records found",
-          search_criteria: {
-            first_name: cleanFirstName,
-            last_name: cleanLastName,
-            date_of_birth: cleanDOB,
-            state_of_origin: cleanState,
-            lga: cleanLGA,
-          },
+          description: "No matching records found from the demographic service.",
+          provider_response: result?.message || "No results",
         },
         data: {
           search_status: "NO_MATCH",
+          search_criteria: payload,
           records_found: 0,
-          search_criteria: searchPayload,
         },
         meta: {
           request_id: requestId,
@@ -162,90 +146,33 @@ const demographicAPI = async (req, res) => {
           api_version: "v1.0.0",
           provider: "DataVerify Demographic Service",
         },
-      })
+      });
     }
 
-    // Deduct balance after successful search
+    const processed = result.data.map((entry, i) => ({
+      record_id: `${requestId}_${i + 1}`,
+      ...entry, // Return all fields directly from provider
+    }));
+
     const newBalance = await deductAPIBalance(
       req.apiUser._id,
-      amount,
-      `API Demographic Search - ${cleanFirstName} ${cleanLastName}`,
-    )
+      billing.sellingPrice,
+      `API Demographic Search - ${cleanData.first_name} ${cleanData.last_name}`
+    );
 
-    // Process and format results
-    const processedRecords = result.data.map((record, index) => ({
-      record_id: `${requestId}_${index + 1}`,
-      personal_information: {
-        nin: record.nin || null,
-        first_name: record.first_name || null,
-        middle_name: record.middle_name || null,
-        last_name: record.last_name || null,
-        full_name:
-          record.full_name || `${record.first_name || ""} ${record.middle_name || ""} ${record.last_name || ""}`.trim(),
-        date_of_birth: record.date_of_birth || null,
-        gender: record.gender || null,
-        phone_number: record.phone || null,
-        email_address: record.email || null,
-        marital_status: record.marital_status || null,
-        nationality: record.nationality || null,
-        religion: record.religion || null,
-        profession: record.profession || null,
-        educational_level: record.educational_level || null,
-        employment_status: record.employment_status || null,
-      },
-      location_information: {
-        state_of_origin: record.state_of_origin || null,
-        lga_of_origin: record.lga_of_origin || null,
-        state_of_residence: record.state_of_residence || null,
-        lga_of_residence: record.lga_of_residence || null,
-        residential_address: record.residential_address || null,
-        place_of_birth: record.place_of_birth || null,
-      },
-      family_information: {
-        next_of_kin: record.next_of_kin || null,
-        next_of_kin_address: record.next_of_kin_address || null,
-        next_of_kin_phone: record.next_of_kin_phone || null,
-        next_of_kin_state: record.next_of_kin_state || null,
-        next_of_kin_lga: record.next_of_kin_lga || null,
-        next_of_kin_relationship: record.next_of_kin_relationship || null,
-      },
-      match_confidence: {
-        overall_score: record.match_score || "MEDIUM",
-        name_match: record.name_match_score || null,
-        dob_match: record.dob_match_score || null,
-        location_match: record.location_match_score || null,
-      },
-    }))
-
-    // Return comprehensive success response
     return res.status(200).json({
       success: true,
       message: "Demographic search completed successfully",
       data: {
-        search_criteria: {
-          first_name: cleanFirstName,
-          last_name: cleanLastName,
-          date_of_birth: cleanDOB,
-          state_of_origin: cleanState,
-          lga: cleanLGA,
-        },
-        search_results: {
-          total_records_found: processedRecords.length,
-          records: processedRecords,
-          search_status: "MATCH_FOUND",
-          search_quality: processedRecords.length > 5 ? "HIGH" : processedRecords.length > 2 ? "MEDIUM" : "LOW",
-        },
-        search_details: {
-          searched_at: new Date().toISOString(),
-          search_method: "Demographic Database Query",
-          data_source: "National Identity Management Commission (NIMC) Database",
-          search_scope: "Nigeria-wide demographic records",
-          privacy_compliance: "GDPR and NDPR compliant",
-        },
+        total_records_found: processed.length,
+        search_status: "MATCH_FOUND",
+        search_criteria: payload,
+        records: processed,
+        searched_at: new Date().toISOString(),
       },
       billing: {
-        amount_charged: amount,
-        currency: "NGN",
+        amount_charged: billing.sellingPrice,
+        currency: billing.currency,
         remaining_balance: newBalance,
         transaction_reference: `TXN_${requestId}`,
         billing_cycle: "Pay-per-use",
@@ -256,53 +183,10 @@ const demographicAPI = async (req, res) => {
         response_time: `${Date.now() - startTime}ms`,
         api_version: "v1.0.0",
         provider: "DataVerify Demographic Service",
-        rate_limit: {
-          remaining: req.rateLimit?.remaining || null,
-          reset_time: req.rateLimit?.resetTime || null,
-        },
       },
-    })
+    });
   } catch (error) {
-    console.error("Demographic API Error:", error)
-
-    // Handle different types of errors
-    if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
-      return res.status(504).json({
-        success: false,
-        message: "Request timeout",
-        error: {
-          code: "GATEWAY_TIMEOUT",
-          description: "The demographic search service is taking too long to respond. Please try again.",
-          retry_after: "30 seconds",
-        },
-        data: null,
-        meta: {
-          request_id: requestId,
-          timestamp: new Date().toISOString(),
-          response_time: `${Date.now() - startTime}ms`,
-          api_version: "v1.0.0",
-        },
-      })
-    }
-
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      return res.status(502).json({
-        success: false,
-        message: "Service authentication error",
-        error: {
-          code: "PROVIDER_AUTH_ERROR",
-          description: "There's an issue with our demographic search service provider. Our team has been notified.",
-          contact_support: "support@yourwebsite.com",
-        },
-        data: null,
-        meta: {
-          request_id: requestId,
-          timestamp: new Date().toISOString(),
-          response_time: `${Date.now() - startTime}ms`,
-          api_version: "v1.0.0",
-        },
-      })
-    }
+    console.error("Demographic API Error:", error);
 
     if (error.message === "Insufficient balance") {
       return res.status(402).json({
@@ -310,39 +194,40 @@ const demographicAPI = async (req, res) => {
         message: "Insufficient account balance",
         error: {
           code: "INSUFFICIENT_BALANCE",
-          description: "Your account balance is insufficient to complete this demographic search",
+          description: "Your account balance is insufficient",
           required_amount: req.billing?.sellingPrice || 0,
-          top_up_url: "https://yourwebsite.com/dashboard/wallet",
+          current_balance: userAccount?.balance || 0,
         },
         data: null,
-        meta: {
-          request_id: requestId,
-          timestamp: new Date().toISOString(),
-          response_time: `${Date.now() - startTime}ms`,
-          api_version: "v1.0.0",
-        },
-      })
+        meta: { request_id: requestId },
+      });
     }
 
-    // Generic server error
+    if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+      return res.status(504).json({
+        success: false,
+        message: "Request timeout",
+        error: {
+          code: "GATEWAY_TIMEOUT",
+          description: "The demographic service is not responding in time",
+        },
+        data: null,
+        meta: { request_id: requestId },
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Internal server error",
       error: {
         code: "INTERNAL_SERVER_ERROR",
-        description:
-          "An unexpected error occurred while processing your demographic search. Please try again or contact support if the issue persists.",
-        contact_support: "support@yourwebsite.com",
+        description: error.message || "Unexpected failure",
+        contact_support: "support@ayverify.com.ng",
       },
       data: null,
-      meta: {
-        request_id: requestId,
-        timestamp: new Date().toISOString(),
-        response_time: `${Date.now() - startTime}ms`,
-        api_version: "v1.0.0",
-      },
-    })
+      meta: { request_id: requestId },
+    });
   }
-}
+};
 
-module.exports = { demographicAPI }
+module.exports = { demographicAPI };
