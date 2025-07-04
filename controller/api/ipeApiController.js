@@ -136,7 +136,7 @@ const checkStatusIPEAPI = async (req, res) => {
 
     const newBalance = await deductAPIBalance(
       req.apiUser._id,
-      amount,
+      amount.sellingPrice,
       `API IPE Verification - ${cleanTrackingId}`
     );
 
