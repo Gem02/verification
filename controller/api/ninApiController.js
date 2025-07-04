@@ -58,7 +58,7 @@ const verifyNinAPI = async (req, res) => {
       });
     }
 
-    // Step 2: Calculate billing and check user balance
+    // Step 2: Billing and Balance
     let billing = null;
     try {
       billing = await calculateBilling("nin", req);
@@ -74,7 +74,7 @@ const verifyNinAPI = async (req, res) => {
       throw error;
     }
 
-    // Step 3: Call the external API
+    // Step 3: External API Call
     let response;
     try {
       const base_url = process.env.PREMBLY_BASE_URL;
@@ -96,7 +96,7 @@ const verifyNinAPI = async (req, res) => {
     }
 
     const result = response.data;
-    console.log('the result is', result);
+    console.log("the result is", result);
 
     if (!result?.status || result?.verification?.status !== "VERIFIED") {
       return res.status(422).json({
@@ -137,46 +137,19 @@ const verifyNinAPI = async (req, res) => {
       throw error;
     }
 
-    // Step 5: Return success
+    // Step 5: Return Full Response with ALL FIELDS
     return res.status(200).json({
       success: true,
       message: "NIN verification completed successfully",
       data: {
         nin: cleanNIN,
         verification_status: "VERIFIED",
-        personal_information: {
-          first_name: result.verification.first_name || null,
-          middle_name: result.verification.middle_name || null,
-          last_name: result.verification.last_name || null,
-          full_name:
-            `${result.verification.first_name || ""} ${result.verification.middle_name || ""} ${result.verification.last_name || ""}`.trim(),
-          date_of_birth: result.verification.date_of_birth || null,
-          gender: result.verification.gender || null,
-          phone_number: result.verification.phone || null,
-          email_address: result.verification.email || null,
-          marital_status: result.verification.marital_status || null,
-          state_of_origin: result.verification.state_of_origin || null,
-          state_of_residence: result.verification.state_of_residence || null,
-          lga_of_origin: result.verification.lga_of_origin || null,
-          lga_of_residence: result.verification.lga_of_residence || null,
-          residential_address: result.verification.residential_address || null,
-          nationality: result.verification.nationality || null,
-          profession: result.verification.profession || null,
-          religion: result.verification.religion || null,
-          educational_level: result.verification.educational_level || null,
-          employment_status: result.verification.employment_status || null,
-          place_of_birth: result.verification.place_of_birth || null,
-          next_of_kin: result.verification.next_of_kin || null,
-          next_of_kin_address: result.verification.next_of_kin_address || null,
-          next_of_kin_phone: result.verification.next_of_kin_phone || null,
-          next_of_kin_state: result.verification.next_of_kin_state || null,
-          next_of_kin_lga: result.verification.next_of_kin_lga || null,
-          next_of_kin_relationship: result.verification.next_of_kin_relationship || null,
-        },
+        nin_data: result.nin_data || {},
         verification_details: {
+          status: result.verification.status || null,
+          reference: result.verification.reference || null,
           verified_at: new Date().toISOString(),
           verification_method: "National Identity Database",
-          confidence_score: result.verification.confidence_score || "HIGH",
           data_source: "NIMC (National Identity Management Commission)",
         },
       },
@@ -192,10 +165,15 @@ const verifyNinAPI = async (req, res) => {
         timestamp: new Date().toISOString(),
         response_time: `${Date.now() - startTime}ms`,
         api_version: "v1.0.0",
+        rate_limit: {
+          remaining: req.rateLimit?.remaining || null,
+          reset_time: req.rateLimit?.resetTime || null,
+        },
       },
     });
   } catch (error) {
-    // Handle known and unknown errors
+    console.error("NIN API Error:", error);
+
     if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
       return res.status(504).json({
         success: false,
