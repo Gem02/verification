@@ -36,6 +36,7 @@ const verifyBvnAPI = async (req, res) => {
     }
 
     const cleanBVN = validator.escape(bvn.toString().trim());
+
     if (!validator.isNumeric(cleanBVN) || cleanBVN.length !== 11) {
       return res.status(400).json({
         success: false,
@@ -57,23 +58,21 @@ const verifyBvnAPI = async (req, res) => {
       });
     }
 
-    // Billing and balance check
     let billing;
     try {
       billing = await calculateBilling("bvn", req);
-    } catch (err) {
-      console.error("Billing error:", err.message);
+    } catch (error) {
+      console.error("Billing error:", error.message);
       throw new Error("Failed to calculate billing");
     }
 
     try {
       userAccount = await checkAPIBalance(req.apiUser._id, billing.sellingPrice);
-    } catch (err) {
-      console.error("Balance check error:", err.message);
-      throw err;
+    } catch (error) {
+      console.error("Balance check error:", error.message);
+      throw error;
     }
 
-    // External API call
     let response;
     try {
       const base_url = process.env.PREMBLY_BASE_URL;
@@ -89,15 +88,15 @@ const verifyBvnAPI = async (req, res) => {
           timeout: 30000,
         }
       );
-    } catch (err) {
-      console.error("Prembly BVN API call failed:", err.message, err.response?.data);
-      throw err;
+    } catch (error) {
+      console.error("Prembly API call failed:", error.message, error.response?.data);
+      throw error;
     }
 
     const result = response.data;
     console.log("BVN Verification Result:", result);
 
-    if (!result?.status || result.verification?.status !== "VERIFIED") {
+    if (!result?.status || result?.verification?.status !== "VERIFIED") {
       return res.status(422).json({
         success: false,
         message: "BVN verification failed",
@@ -105,7 +104,7 @@ const verifyBvnAPI = async (req, res) => {
           code: "VERIFICATION_FAILED",
           field: "bvn",
           description: "The provided BVN could not be verified with the banking database",
-          provider_response: result?.message || result?.verification?.status || "Unknown error",
+          provider_response: result?.message || "Unknown error from verification provider",
         },
         data: {
           bvn: cleanBVN,
@@ -117,12 +116,10 @@ const verifyBvnAPI = async (req, res) => {
           timestamp: new Date().toISOString(),
           response_time: `${Date.now() - startTime}ms`,
           api_version: "v1.0.0",
-          provider: "Prembly Identity Pass",
         },
       });
     }
 
-    // Deduct balance
     let newBalance;
     try {
       newBalance = await deductAPIBalance(
@@ -130,12 +127,12 @@ const verifyBvnAPI = async (req, res) => {
         billing.sellingPrice,
         `API BVN Verification - ${cleanBVN}`
       );
-    } catch (err) {
-      console.error("Deduction error:", err.message);
-      throw err;
+    } catch (error) {
+      console.error("Deduction error:", error.message);
+      throw error;
     }
 
-    const v = result.verification;
+    const d = result.data;
 
     return res.status(200).json({
       success: true,
@@ -144,35 +141,41 @@ const verifyBvnAPI = async (req, res) => {
         bvn: cleanBVN,
         verification_status: "VERIFIED",
         personal_information: {
-          first_name: v.first_name || null,
-          middle_name: v.middle_name || null,
-          last_name: v.last_name || null,
-          full_name: `${v.first_name || ""} ${v.middle_name || ""} ${v.last_name || ""}`.trim(),
-          date_of_birth: v.date_of_birth || null,
-          gender: v.gender || null,
-          phone_number: v.phone || null,
-          email_address: v.email || null,
-          marital_status: v.marital_status || null,
-          nationality: v.nationality || null,
-          state_of_residence: v.state_of_residence || null,
-          lga_of_residence: v.lga_of_residence || null,
-          residential_address: v.residential_address || null,
-          watch_listed: v.watch_listed || null,
+          first_name: d.firstName || null,
+          middle_name: d.middleName || null,
+          last_name: d.lastName || null,
+          full_name: `${d.firstName || ""} ${d.middleName || ""} ${d.lastName || ""}`.trim(),
+          gender: d.gender || null,
+          date_of_birth: d.dateOfBirth || null,
+          phone_number_1: d.phoneNumber1 || null,
+          phone_number_2: d.phoneNumber2 || null,
+          email_address: d.email || null,
+          marital_status: d.maritalStatus || null,
+          nationality: d.nationality || null,
+          state_of_origin: d.stateOfOrigin || null,
+          lga_of_origin: d.lgaOfOrigin || null,
+          state_of_residence: d.stateOfResidence || null,
+          lga_of_residence: d.lgaOfResidence || null,
+          residential_address: d.residentialAddress || null,
+          title: d.title || null,
+          watch_listed: d.watchListed || null,
+          nin: d.nin || null,
         },
         banking_information: {
-          enrollment_bank: v.enrollment_bank || null,
-          enrollment_branch: v.enrollment_branch || null,
-          registration_date: v.registration_date || null,
-          level_of_account: v.level_of_account || null,
-          account_status: v.account_status || null,
-          name_on_card: v.name_on_card || null,
+          enrollment_bank: d.enrollmentBank || null,
+          enrollment_branch: d.enrollmentBranch || null,
+          registration_date: d.registrationDate || null,
+          level_of_account: d.levelOfAccount || null,
+          name_on_card: d.nameOnCard || null,
         },
         verification_details: {
           verified_at: new Date().toISOString(),
           verification_method: "Bank Verification Number Database",
-          confidence_score: v.confidence_score || "HIGH",
+          confidence_score: result.verification?.confidence_score || "HIGH",
           data_source: "CBN (Central Bank of Nigeria) BVN Database",
+          reference: result.verification?.reference || null,
         },
+        image: d.base64Image || null,
       },
       billing: {
         amount_charged: billing.sellingPrice,
@@ -186,7 +189,6 @@ const verifyBvnAPI = async (req, res) => {
         timestamp: new Date().toISOString(),
         response_time: `${Date.now() - startTime}ms`,
         api_version: "v1.0.0",
-        provider: "Prembly Identity Pass",
         rate_limit: {
           remaining: req.rateLimit?.remaining || null,
           reset_time: req.rateLimit?.resetTime || null,
@@ -202,7 +204,7 @@ const verifyBvnAPI = async (req, res) => {
         message: "Request timeout",
         error: {
           code: "GATEWAY_TIMEOUT",
-          description: "The verification service is taking too long to respond.",
+          description: "The verification service is taking too long to respond. Please try again.",
         },
         data: null,
         meta: { request_id: requestId },
@@ -218,19 +220,6 @@ const verifyBvnAPI = async (req, res) => {
           description: "Your account balance is insufficient for this request",
           required_amount: req.billing?.sellingPrice || 0,
           current_balance: userAccount?.balance || 0,
-        },
-        data: null,
-        meta: { request_id: requestId },
-      });
-    }
-
-    if (error.response?.status === 401) {
-      return res.status(502).json({
-        success: false,
-        message: "Service authentication error",
-        error: {
-          code: "PROVIDER_AUTH_ERROR",
-          description: "Authentication with the provider failed.",
         },
         data: null,
         meta: { request_id: requestId },
