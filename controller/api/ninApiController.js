@@ -96,6 +96,7 @@ const verifyNinAPI = async (req, res) => {
     }
 
     const result = response.data;
+    console.log('the result is', result);
 
     if (!result?.status || result?.verification?.status !== "VERIFIED") {
       return res.status(422).json({
