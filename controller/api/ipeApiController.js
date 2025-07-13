@@ -219,7 +219,6 @@ const checkStatusIPEAPI = async (req, res) => {
           description:
             "Your account balance is insufficient to complete this request",
           required_amount: req.billing?.sellingPrice || 0,
-          top_up_url: "https://yourwebsite.com/dashboard/wallet",
         },
         data: null,
         meta: {

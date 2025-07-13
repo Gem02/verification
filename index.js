@@ -29,10 +29,15 @@ connectDB();
 
 app.use(cookieParser());
 app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.send("<h1>API is working</h1>");
+});
+
 app.use(secureHeaders);
 app.use(hpp);
 app.use(cors({
-  origin: process.env.CORS_WHITELIST.split(','),
+  origin: ['https://ayverify.com.ng'],
   methods: 'GET,POST,PUT,DELETE,PATCH',
   credentials: true,
 }));
